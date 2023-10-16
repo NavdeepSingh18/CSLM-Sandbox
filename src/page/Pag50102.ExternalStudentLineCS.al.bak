@@ -1,0 +1,92 @@
+page 50102 "External Student Line-CS"
+{
+    // version V.001-CS
+
+    AutoSplitKey = true;
+    Caption = 'External Examination SubPage';
+    InsertAllowed = true;
+    PageType = ListPart;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "External Exam Line-CS";
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+
+
+                field("Student No."; "Student No.")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Enrollment No."; "Enrollment No.")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Student Name"; "Student Name")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Semester; Semester)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Academic year"; "Academic year")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
+                field("Subject Code"; "Subject Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
+
+                field("External Mark"; "External Mark")
+                {
+                    ApplicationArea = All;
+                    Caption = 'Obtained External Marks';
+                }
+
+                field("External Maximum"; "External Maximum")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Maximum External Marks';
+                }
+                field("Percentage Obtained"; "Percentage Obtained")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Obtained Weightage"; "Obtained Weightage")
+                {
+                    ApplicationArea = all;
+                    Editable = false;
+                }
+                field("Maximum Weightage"; "Maximum Weightage")
+                {
+                    ApplicationArea = all;
+                    Editable = false;
+                }
+
+
+                field("Exam Date"; "Exam Date")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
+            }
+        }
+    }
+}
+

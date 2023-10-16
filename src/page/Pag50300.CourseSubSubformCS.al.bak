@@ -1,0 +1,143 @@
+page 50300 "Course Sub Subform-CS"
+{
+    // version V.001-CS
+
+    Caption = 'Course Sub Subform-CS';
+    PageType = ListPart;
+    SourceTable = "Course Wise Subject Line-CS";
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+                field("Course Code"; "Course Code")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field(Semester; Semester)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+                field("Subject Code"; "Subject Code")
+                {
+                    ApplicationArea = All;
+                }
+                field(Description; Description)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Subject Description';
+                }
+                field("Subject Type"; "Subject Type")
+                {
+                    ApplicationArea = All;
+                }
+                field("Subject Classification"; "Subject Classification")
+                {
+                    ApplicationArea = All;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Subject Group"; "Subject Group")
+                {
+                    ApplicationArea = all;
+                }
+                field("Subject Group Description"; "Subject Group Description")
+                {
+                    ApplicationArea = all;
+                    Editable = false;
+                }
+                // field("Goal Code"; "Goal Code")
+                // {
+                //     ApplicationArea = all;
+                // }
+                field(Level; Level)
+                {
+                    ApplicationArea = all;
+                }
+                field("Level Description"; "Level Description")
+                {
+                    ApplicationArea = all;
+                }
+                field("Core Rotation Group"; "Core Rotation Group")
+                {
+                    ApplicationArea = all;
+                }
+                field(Term; Term)
+                {
+                    ApplicationArea = All;
+                }
+                field("Term Description"; "Term Description")
+                {
+                    ApplicationArea = All;
+                }
+                field(Examination; Examination)
+                {
+                    ApplicationArea = all;
+                }
+                field(Credit; Credit)
+                {
+                    ApplicationArea = All;
+                }
+                field("Internal Maximum"; "Internal Maximum")
+                {
+                    ApplicationArea = All;
+                }
+
+                field("External Pass"; "External Pass")
+                {
+                    ApplicationArea = All;
+                }
+                field("External Maximum"; "External Maximum")
+                {
+                    ApplicationArea = All;
+                }
+                field("Total Pass"; "Total Pass")
+                {
+                    ApplicationArea = All;
+                }
+                field("Total Maximum"; "Total Maximum")
+                {
+                    ApplicationArea = All;
+                }
+                field("Minimum Passing Marks"; "Minimum Passing Marks")
+                {
+                    ApplicationArea = All;
+                }
+                field("Applicable Batch"; "Applicable Batch")
+                {
+                    ApplicationArea = All;
+                }
+
+            }
+        }
+    }
+
+    actions
+    {
+        area(Processing)
+        {
+            action("Subject Wise Goal List")
+            {
+                Caption = '&Subject Wise Goal List';
+                PromotedOnly = true;
+                Promoted = true;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                Image = SetupList;
+                ApplicationArea = All;
+                RunObject = Page "Subject Goal List";
+                RunPageLink = "Subject Code" = FIELD("Subject Code");
+
+            }
+        }
+    }
+}
+

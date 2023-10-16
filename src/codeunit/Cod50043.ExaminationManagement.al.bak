@@ -1,0 +1,1396 @@
+codeunit 50043 "Examination Management"
+{
+    /// <summary> 
+    /// Description for ExternalEarnedPoints.
+    /// </summary>
+    /// <param name="StudentNo">Parameter of type Code[20].</param>
+    /// <param name="SemesterType">Parameter of type Option "FALL","SPRING".</param>
+    /// <param name="ExamClassification">Parameter of type Code[20].</param>
+    procedure ExternalEarnedPoints(StudentNo: Code[20]; SemesterType: Option "FALL","SPRING"; ExamClassification: Code[20])
+    var
+        StudentMaster: Record "Student Master-CS";
+        ExternalExamLine: Record "External Exam Line-CS";
+        GradeInput: Record "Grade Input";
+        GradeBook: Record "Grade Book";
+        RecRecommendations: Record "Recommendations";
+        GradeMaster: Record "Grade Master-CS";
+        ExternalExamHeader: Record "External Exam Header-CS";
+        LastEntryNo: Integer;
+
+    begin
+        StudentMaster.Get(StudentNo);
+        GradeBook.Reset();
+        GradeBook.SetRange("Student No.", StudentMaster."No.");
+        GradeBook.SetRange("Academic Year", StudentMaster."Academic Year");
+        GradeBook.SetRange(Semester, StudentMaster.Semester);
+        GradeBook.SetRange(Term, SemesterType);
+        GradeBook.SetRange("Exam Classification", ExamClassification);
+        if GradeBook.FindSet() then
+            GradeBook.DeleteAll();
+
+        GradeBook.Reset();
+        GradeBook.SetRange("Student No.", StudentMaster."No.");
+        if GradeBook.FindLast() then
+            LastEntryNo := GradeBook."Entry No.";
+
+        ExternalExamLine.Reset();
+        ExternalExamLine.SetCurrentKey("Student No.", "Academic year");
+        ExternalExamLine.SetRange("Student No.", StudentMaster."No.");
+        ExternalExamLine.SetRange("Academic year", StudentMaster."Academic Year");
+        ExternalExamLine.SetRange(Semester, StudentMaster.Semester);
+        ExternalExamLine.SetRange(Term, SemesterType);
+        ExternalExamLine.SetRange("Exam Classification", ExamClassification);
+        if ExternalExamLine.FindSet() then
+            repeat
+                //Main Exam Line >>
+                LastEntryNo += 1;
+                GradeBook.Init();
+                GradeBook."Entry No." := LastEntryNo;
+                GradeBook."Student No." := StudentMaster."No.";
+                GradeBook."First Name" := StudentMaster."First Name";
+                GradeBook."Middle Name" := StudentMaster."Middle Name";
+                GradeBook."Last Name" := StudentMaster."Last Name";
+                GradeBook."Student Name" := StudentMaster."Student Name";
+                GradeBook."Enrollment No." := StudentMaster."Enrollment No.";
+                GradeBook."Academic Year" := StudentMaster."Academic Year";
+                GradeBook."Admitted Year" := StudentMaster."Admitted Year";
+                GradeBook.Semester := StudentMaster.Semester;
+                GradeBook."Exam Code" := ExternalExamLine."Subject Code";
+                ExternalExamHeader.Reset();
+                ExternalExamHeader.SetRange("No.", ExternalExamLine."Document No.");
+                ExternalExamHeader.SetRange("Subject Code", ExternalExamLine."Subject Code");
+                IF ExternalExamHeader.FindLast() Then
+                    GradeBook."Exam Description" := ExternalExamHeader."Subject Description";
+                GradeBook."Global Dimension 1 Code" := StudentMaster."Global Dimension 1 Code";
+                GradeBook.Term := ExternalExamLine.Term;
+                GradeBook."Exam Classification" := ExternalExamLine."Exam Classification";
+                GradeBook."Type of Input" := GradeBook."Type of Input"::" ";
+                GradeBook."Percentage Obtained" := ExternalExamLine."Percentage Obtained";
+                GradeBook.Grade := ExternalExamLine."Std. Grade";
+                GradeBook.Indentation := 1;
+                GradeBook.Insert();
+                //Main Exam Line <<
+
+                GradeInput.Reset();
+                GradeInput.SetRange("Exam Code", ExternalExamLine."Subject Code");
+                GradeInput.SetRange("Academic Year", StudentMaster."Academic Year");
+                GradeInput.SetRange("Admitted Year", StudentMaster."Admitted Year");
+                GradeInput.SetRange(Semester, StudentMaster.Semester);
+                if GradeInput.FindSet() then
+                    repeat
+                        LastEntryNo += 1;
+                        GradeBook.Init();
+                        GradeBook."Entry No." := LastEntryNo;
+                        GradeBook."Student No." := StudentMaster."No.";
+                        GradeBook."First Name" := StudentMaster."First Name";
+                        GradeBook."Middle Name" := StudentMaster."Middle Name";
+                        GradeBook."Last Name" := StudentMaster."Last Name";
+                        GradeBook."Student Name" := StudentMaster."Student Name";
+                        GradeBook."Enrollment No." := StudentMaster."Enrollment No.";
+                        GradeBook."Academic Year" := StudentMaster."Academic Year";
+                        GradeBook."Admitted Year" := StudentMaster."Admitted Year";
+                        GradeBook.Semester := StudentMaster.Semester;
+                        GradeBook."Exam Code" := GradeInput."Exam Code";
+                        GradeBook."Exam Description" := GradeInput."Exam Description";
+                        GradeBook."Global Dimension 1 Code" := GradeInput."Global Dimension 1 Code";
+                        GradeBook.Term := ExternalExamLine.Term;
+                        GradeBook."Exam Classification" := ExternalExamLine."Exam Classification";
+                        GradeBook."Type of Input" := GradeInput."Type of Input";
+                        GradeBook."Input Sequence" := GradeInput."Input Sequence";
+                        GradeBook."Percentage Obtained" := ExternalExamLine."Percentage Obtained";
+                        GradeBook.Grade := ExternalExamLine."Std. Grade";
+                        GradeBook."Earned Points" := Round(((ExternalExamLine."Percentage Obtained" / 100) * GradeInput.Points), 0.01, '=');
+                        GradeBook."Available Points" := GradeInput.Points;
+                        GradeBook."Earned Points Percentage" := Round((GradeBook."Earned Points" / GradeInput.Points) * 100, 0.01, '=');
+
+                        RecRecommendations.Reset();
+                        RecRecommendations.SetRange("Global Dimension 1 Code", GradeInput."Global Dimension 1 Code");
+                        RecRecommendations.SetRange(Semester, StudentMaster.Semester);
+                        RecRecommendations.SetFilter("Min Percentage", '<=%1', GradeBook."Earned Points Percentage");
+                        RecRecommendations.SetFilter("Max Percentage", '>=%1', GradeBook."Earned Points Percentage");
+                        IF RecRecommendations.FindFirst() then begin
+                            GradeBook."% Range" := RecRecommendations."Range Percentage";
+                            GradeBook.Recommendation := RecRecommendations.Recommendation;
+                        end;
+
+                        GradeMaster.Reset();
+                        GradeMaster.SetRange(Graduation, StudentMaster.Graduation);
+                        GradeMaster.SetRange("Global Dimension 1 Code", StudentMaster."Global Dimension 1 Code");
+                        GradeMaster.SetFilter("Min Percentage", '<=%1', GradeBook."Earned Points Percentage");
+                        GradeMaster.SetFilter("Max Percentage", '>=%1', GradeBook."Earned Points Percentage");
+                        If GradeMaster.FindFirst() Then
+                            GradeBook."Grade Result" := GradeMaster.Code;
+                        GradeBook.Indentation := 2;
+                        GradeBook.Insert();
+                    until GradeInput.Next() = 0;
+            until ExternalExamLine.Next() = 0;
+    End;
+
+    /// <summary> 
+    /// Description for InternalEarnedPoints.
+    /// </summary>
+    /// <param name="StudentNo">Parameter of type Code[20].</param>
+    /// <param name="SubjectCode">Parameter of type code[1000].</param>
+    /// <param name="SemesterType">Parameter of type Option "FALL","SPRING".</param>
+    /// <param name="ExamClassification">Parameter of type Code[20].</param>
+    procedure InternalEarnedPoints(StudentNo: Code[20]; SubjectCode: code[1000]; SemesterType: Option "FALL","SPRING"; ExamClassification: Code[20])
+    var
+        StudentMaster: Record "Student Master-CS";
+        InternalExamLine: Record "Internal Exam Line-CS";
+        GradeInput: Record "Grade Input";
+        GradeBook: Record "Grade Book";
+        RecRecommendations: Record "Recommendations";
+        GradeMaster: Record "Grade Master-CS";
+        InternalExamHeader: Record "Internal Exam Header-CS";
+        LastEntryNo: Integer;
+
+    begin
+        StudentMaster.Get(StudentNo);
+        GradeBook.Reset();
+        GradeBook.SetRange("Student No.", StudentMaster."No.");
+        if GradeBook.FindLast() then
+            LastEntryNo := GradeBook."Entry No.";
+
+        InternalExamLine.Reset();
+        InternalExamLine.SetCurrentKey("Student No.", "Academic year");
+        InternalExamLine.SetRange("Student No.", StudentMaster."No.");
+        InternalExamLine.SetRange("Academic year", StudentMaster."Academic Year");
+        InternalExamLine.SetRange(Semester, StudentMaster.Semester);
+        InternalExamLine.SetRange("Subject Code", SubjectCode);
+        InternalExamLine.SetRange(Term, SemesterType);
+        InternalExamLine.SetRange("Exam Classification", ExamClassification);
+        if InternalExamLine.FindSet() then
+            repeat
+                //Main Exam Line >>
+                LastEntryNo += 1;
+                GradeBook.Init();
+                GradeBook."Entry No." := LastEntryNo;
+                GradeBook."Student No." := StudentMaster."No.";
+                GradeBook."First Name" := StudentMaster."First Name";
+                GradeBook."Middle Name" := StudentMaster."Middle Name";
+                GradeBook."Last Name" := StudentMaster."Last Name";
+                GradeBook."Student Name" := StudentMaster."Student Name";
+                GradeBook."Enrollment No." := StudentMaster."Enrollment No.";
+                GradeBook."Academic Year" := StudentMaster."Academic Year";
+                GradeBook."Admitted Year" := StudentMaster."Admitted Year";
+                GradeBook.Semester := StudentMaster.Semester;
+                GradeBook."Exam Code" := InternalExamLine."Subject Code";
+                InternalExamHeader.Reset();
+                InternalExamHeader.SetRange("No.", InternalExamLine."Document No.");
+                InternalExamHeader.SetRange("Subject Code", InternalExamLine."Subject Code");
+                IF InternalExamHeader.FindLast() Then
+                    GradeBook."Exam Description" := InternalExamHeader."Subject Description";
+                GradeBook."Global Dimension 1 Code" := StudentMaster."Global Dimension 1 Code";
+                GradeBook.Term := InternalExamLine.Term;
+                GradeBook."Exam Classification" := InternalExamLine."Exam Classification";
+                GradeBook."Type of Input" := GradeBook."Type of Input"::" ";
+                GradeBook."Percentage Obtained" := InternalExamLine."Percentage Obtained";
+                GradeBook.Grade := InternalExamLine.Grade;
+                GradeBook.Indentation := 1;
+                GradeBook.Insert();
+                //Main Exam Line <<
+
+                GradeInput.Reset();
+                GradeInput.SetRange("Exam Code", InternalExamLine."Subject Code");
+                GradeInput.SetRange("Academic Year", StudentMaster."Academic Year");
+                GradeInput.SetRange("Admitted Year", StudentMaster."Admitted Year");
+                GradeInput.SetRange(Semester, StudentMaster.Semester);
+                if GradeInput.FindSet() then
+                    repeat
+                        LastEntryNo += 1;
+                        GradeBook.Init();
+                        GradeBook."Entry No." := LastEntryNo;
+                        GradeBook."Student No." := StudentMaster."No.";
+                        GradeBook."First Name" := StudentMaster."First Name";
+                        GradeBook."Middle Name" := StudentMaster."Middle Name";
+                        GradeBook."Last Name" := StudentMaster."Last Name";
+                        GradeBook."Student Name" := StudentMaster."Student Name";
+                        GradeBook."Enrollment No." := StudentMaster."Enrollment No.";
+                        GradeBook."Academic Year" := StudentMaster."Academic Year";
+                        GradeBook."Admitted Year" := StudentMaster."Admitted Year";
+                        GradeBook.Semester := StudentMaster.Semester;
+                        GradeBook."Exam Code" := GradeInput."Exam Code";
+                        GradeBook."Exam Description" := GradeInput."Exam Description";
+                        GradeBook."Global Dimension 1 Code" := GradeInput."Global Dimension 1 Code";
+                        GradeBook.Term := InternalExamLine.Term;
+                        GradeBook."Exam Classification" := InternalExamLine."Exam Classification";
+                        GradeBook."Type of Input" := GradeInput."Type of Input";
+                        GradeBook."Input Sequence" := GradeInput."Input Sequence";
+                        GradeBook."Percentage Obtained" := InternalExamLine."Percentage Obtained";
+                        GradeBook.Grade := InternalExamLine.Grade;
+
+                        GradeBook."Earned Points" := Round(((GradeBook."Percentage Obtained" / 100) * GradeInput.Points), 0.01, '=');
+                        GradeBook."Available Points" := GradeInput.Points;
+                        GradeBook."Earned Points Percentage" := Round((GradeBook."Earned Points" / GradeInput.Points) * 100, 0.01, '=');
+
+                        RecRecommendations.Reset();
+                        RecRecommendations.SetRange("Global Dimension 1 Code", GradeInput."Global Dimension 1 Code");
+                        RecRecommendations.SetRange(Semester, StudentMaster.Semester);
+                        RecRecommendations.SetFilter("Min Percentage", '<=%1', GradeBook."Earned Points Percentage");
+                        RecRecommendations.SetFilter("Max Percentage", '>=%1', GradeBook."Earned Points Percentage");
+                        IF RecRecommendations.FindFirst() then begin
+                            GradeBook."% Range" := RecRecommendations."Range Percentage";
+                            GradeBook.Recommendation := RecRecommendations.Recommendation;
+                        end;
+
+                        GradeMaster.Reset();
+                        GradeMaster.SetRange(Graduation, StudentMaster.Graduation);
+                        GradeMaster.SetRange("Global Dimension 1 Code", StudentMaster."Global Dimension 1 Code");
+                        GradeMaster.SetFilter("Min Percentage", '<=%1', GradeBook."Earned Points Percentage");
+                        GradeMaster.SetFilter("Max Percentage", '>=%1', GradeBook."Earned Points Percentage");
+                        If GradeMaster.FindFirst() Then
+                            GradeBook."Grade Result" := GradeMaster.Code;
+                        GradeBook.Indentation := 2;
+                        GradeBook.Insert();
+                    until GradeInput.Next() = 0;
+            until InternalExamLine.Next() = 0;
+    end;
+
+    /// <summary> 
+    /// Description for EndTotalAndBest.
+    /// </summary>
+    /// <param name="StudentNo">Parameter of type Code[20].</param>
+    /// <param name="SemesterType">Parameter of type Option "FALL","SPRING".</param>
+    /// <param name="ExamClassification">Parameter of type Code[20].</param>
+    procedure EndTotalAndBest(StudentNo: Code[20]; SemesterType: Option "FALL","SPRING"; ExamClassification: Code[20])
+    var
+        StudentMaster: Record "Student Master-CS";
+        GradeInput: Record "Grade Input";
+        GradeBook: Record "Grade Book";
+        GradeBook_1: Record "Grade Book";
+        GradeBook_2: Record "Grade Book";
+        GradeBookTemp: Record "Grade Book" temporary;
+        RecRecommendations: Record "Recommendations";
+        GradeMaster: Record "Grade Master-CS";
+        RecSemester: Record "Semester Master-CS";
+        ExaminationSetup: Record "Setup Examination -CS";
+        MainStudentSubject: Record "Main Student Subject-CS";
+        LastEntryNo: Integer;
+        AvblPoints: Decimal;
+        TotalEarnedPoint: Decimal;
+
+    begin
+        Clear(GradeBookTemp);
+        StudentMaster.Get(StudentNo);
+
+        // Temp Start >>
+        GradeBook.Reset();
+        GradeBook.SetRange("Student No.", StudentMaster."No.");
+        GradeBook.SetRange("Academic year", StudentMaster."Academic Year");
+        GradeBook.SetRange(Semester, StudentMaster.Semester);
+        GradeBook.SetRange(Term, SemesterType);
+        GradeBook.SetRange("Exam Classification", ExamClassification);
+        GradeBook.SetRange("Type of Input", GradeBook."Type of Input"::" ");
+        If GradeBook.FindFirst() then begin
+            GradeInput.Reset();
+            GradeInput.SetRange("Exam Code", GradeBook."Exam Code");
+            GradeInput.SetRange("Academic Year", StudentMaster."Academic Year");
+            GradeInput.SetRange("Admitted Year", StudentMaster."Admitted Year");
+            GradeInput.SetRange(Semester, StudentMaster.Semester);
+            if GradeInput.FindSet() then
+                repeat
+                    GradeBookTemp.Reset();
+                    GradeBookTemp.SetRange("Student No.", StudentMaster."No.");
+                    GradeBookTemp.SetRange("Academic year", StudentMaster."Academic Year");
+                    GradeBookTemp.SetRange(Semester, StudentMaster.Semester);
+                    GradeBookTemp.SetRange(Term, SemesterType);
+                    GradeBookTemp.SetRange("Type of Input", GradeInput."Type of Input");
+                    GradeBookTemp.SetRange("Input Sequence", GradeInput."Input Sequence");
+                    If Not GradeBookTemp.FindFirst() then begin
+                        AvblPoints := 0;
+                        TotalEarnedPoint := 0;
+
+                        GradeBook_1.Reset();
+                        GradeBook_1.SetCurrentKey("Student No.", "Academic year");
+                        GradeBook_1.SetRange("Student No.", StudentMaster."No.");
+                        GradeBook_1.SetRange("Academic year", StudentMaster."Academic Year");
+                        GradeBook_1.SetRange(Semester, StudentMaster.Semester);
+                        GradeBook_1.SetRange(Term, SemesterType);
+                        GradeBook_1.SetRange("Type of Input", GradeInput."Type of Input");
+                        GradeBook_1.CalcSums(GradeBook_1."Earned Points", GradeBook_1."Available Points");
+                        AvblPoints := GradeBook_1."Available Points";
+                        TotalEarnedPoint := GradeBook_1."Earned Points";
+
+                        GradeBookTemp.Init();
+                        GradeBookTemp."Entry No." := GradeBookTemp."Entry No." + 1;
+                        GradeBookTemp."Student No." := StudentMaster."No.";
+                        GradeBookTemp."First Name" := StudentMaster."First Name";
+                        GradeBookTemp."Middle Name" := StudentMaster."Middle Name";
+                        GradeBookTemp."Last Name" := StudentMaster."Last Name";
+                        GradeBookTemp."Student Name" := StudentMaster."Student Name";
+                        GradeBookTemp."Enrollment No." := StudentMaster."Enrollment No.";
+                        GradeBookTemp."Academic Year" := StudentMaster."Academic Year";
+                        GradeBookTemp."Admitted Year" := StudentMaster."Admitted Year";
+                        GradeBookTemp.Semester := StudentMaster.Semester;
+                        GradeBookTemp."Global Dimension 1 Code" := GradeInput."Global Dimension 1 Code";
+                        GradeBookTemp.Term := GradeBook.Term;
+                        GradeBookTemp."Exam Classification" := GradeBook."Exam Classification";
+                        GradeBookTemp."Type of Input" := GradeInput."Type of Input";
+                        GradeBookTemp."Input Sequence" := GradeInput."Input Sequence";
+                        GradeBookTemp."Earned Points" := TotalEarnedPoint;
+                        GradeBookTemp."Available Points" := AvblPoints;
+                        GradeBookTemp."Earned Points Percentage" := round((TotalEarnedPoint / AvblPoints) * 100, 0.01, '=');
+
+                        RecRecommendations.Reset();
+                        RecRecommendations.SetRange("Global Dimension 1 Code", StudentMaster."Global Dimension 1 Code");
+                        RecRecommendations.SetRange(Semester, StudentMaster.Semester);
+                        RecRecommendations.SetFilter("Min Percentage", '<=%1', GradeBookTemp."Earned Points Percentage");
+                        RecRecommendations.SetFilter("Max Percentage", '>=%1', GradeBookTemp."Earned Points Percentage");
+                        IF RecRecommendations.FindFirst() then begin
+                            GradeBookTemp."% Range" := RecRecommendations."Range Percentage";
+                            GradeBookTemp.Recommendation := RecRecommendations.Recommendation;
+                        end;
+
+                        GradeBook_2.Reset();
+                        GradeBook_2.SetRange("Student No.", StudentMaster."No.");
+                        GradeBook_2.SetRange("Academic year", StudentMaster."Academic Year");
+                        GradeBook_2.SetRange(Semester, StudentMaster.Semester);
+                        GradeBook_2.SetRange(Term, SemesterType);
+                        GradeBook_2.SetRange("Exam Classification", ExamClassification);
+                        GradeBook_2.SetRange("Type of Input", GradeBook_2."Type of Input"::" ");
+                        GradeBook_2.SetFilter(Grade, '%1|%2|%3', 'SLOA', 'ELOA', 'CLOA');
+                        If GradeBook_2.FindFirst() then begin
+                            GradeBookTemp."Grade Result" := GradeBook_2.Grade;
+                        End Else Begin
+                            GradeMaster.Reset();
+                            GradeMaster.SetRange(Graduation, StudentMaster.Graduation);
+                            GradeMaster.SetRange("Global Dimension 1 Code", StudentMaster."Global Dimension 1 Code");
+                            GradeMaster.SetFilter("Min Percentage", '<=%1', GradeBookTemp."Earned Points Percentage");
+                            GradeMaster.SetFilter("Max Percentage", '>=%1', GradeBookTemp."Earned Points Percentage");
+                            If GradeMaster.FindFirst() Then
+                                GradeBookTemp."Grade Result" := GradeMaster.Code;
+                        End;
+                        GradeBookTemp.Insert();
+                    end;
+
+                until GradeInput.Next() = 0;
+        end;
+        // Temp End <<
+
+        //For End Total Line
+        GradeBook.Reset();
+        GradeBook.SetRange("Student No.", StudentMaster."No.");
+        if GradeBook.FindLast() then
+            LastEntryNo := GradeBook."Entry No.";
+
+        GradeBookTemp.Reset();
+        GradeBookTemp.SetRange("Student No.", StudentMaster."No.");
+        GradeBookTemp.SetRange("Academic year", StudentMaster."Academic Year");
+        GradeBookTemp.SetRange(Semester, StudentMaster.Semester);
+        If GradeBookTemp.Findset() then
+            repeat
+                LastEntryNo += 1;
+                GradeBook.Init();
+                GradeBook."Entry No." := LastEntryNo;
+                GradeBook."Student No." := GradeBookTemp."Student No.";
+                GradeBook."First Name" := GradeBookTemp."First Name";
+                GradeBook."Middle Name" := GradeBookTemp."Middle Name";
+                GradeBook."Last Name" := GradeBookTemp."Last Name";
+                GradeBook."Student Name" := GradeBookTemp."Student Name";
+                GradeBook."Enrollment No." := GradeBookTemp."Enrollment No.";
+                GradeBook."Academic Year" := GradeBookTemp."Academic Year";
+                GradeBook."Admitted Year" := GradeBookTemp."Admitted Year";
+                GradeBook.Semester := GradeBookTemp.Semester;
+                GradeBook."Global Dimension 1 Code" := GradeBookTemp."Global Dimension 1 Code";
+                GradeBook.Term := GradeBookTemp.Term;
+                GradeBook."Exam Classification" := GradeBookTemp."Exam Classification";
+                GradeBook."Type of Input" := GradeBookTemp."Type of Input";
+                GradeBook."Input Sequence" := GradeBookTemp."Input Sequence";
+                GradeBook."Earned Points" := GradeBookTemp."Earned Points";
+                GradeBook."Available Points" := GradeBookTemp."Available Points";
+                GradeBook."Earned Points Percentage" := GradeBookTemp."Earned Points Percentage";
+                GradeBook."% Range" := GradeBookTemp."% Range";
+                GradeBook.Recommendation := GradeBookTemp.Recommendation;
+                GradeBook."Grade Result" := GradeBookTemp."Grade Result";
+                GradeBook.Insert();
+            Until GradeBookTemp.Next() = 0;
+
+
+        //FOR BEST LINE CALCULATION
+        GradeBook.Reset();
+        GradeBook.SetRange("Student No.", StudentMaster."No.");
+        if GradeBook.FindLast() then
+            LastEntryNo := GradeBook."Entry No.";
+
+        GradeBookTemp.Reset();
+        GradeBookTemp.SetCurrentKey("Student No.", "Academic Year", Semester, "Earned Points Percentage");
+        GradeBookTemp.SetRange("Student No.", StudentMaster."No.");
+        GradeBookTemp.SetRange("Academic Year", StudentMaster."Academic Year");
+        GradeBookTemp.SetRange(Semester, StudentMaster.Semester);
+        GradeBookTemp.SetRange(Term, SemesterType);
+        If GradeBookTemp.FindLast() then begin
+            LastEntryNo += 1;
+            GradeBook.Init();
+            GradeBook."Entry No." := LastEntryNo;
+            GradeBook."Student No." := GradeBookTemp."Student No.";
+            GradeBook."First Name" := GradeBookTemp."First Name";
+            GradeBook."Middle Name" := GradeBookTemp."Middle Name";
+            GradeBook."Last Name" := GradeBookTemp."Last Name";
+            GradeBook."Student Name" := GradeBookTemp."Student Name";
+            GradeBook."Enrollment No." := GradeBookTemp."Enrollment No.";
+            GradeBook."Academic Year" := GradeBookTemp."Academic Year";
+            GradeBook."Admitted Year" := GradeBookTemp."Admitted Year";
+            GradeBook.Semester := GradeBookTemp.Semester;
+            GradeBook."Global Dimension 1 Code" := GradeBookTemp."Global Dimension 1 Code";
+            GradeBook.Term := GradeBookTemp.Term;
+            GradeBook."Exam Classification" := GradeBookTemp."Exam Classification";
+            GradeBook."Type of Input" := GradeBook."Type of Input"::Best;
+            GradeBook."Input Sequence" := 0;
+            GradeBook."Earned Points" := GradeBookTemp."Earned Points";
+            GradeBook."Available Points" := GradeBookTemp."Available Points";
+            GradeBook."Earned Points Percentage" := GradeBookTemp."Earned Points Percentage";
+            GradeBook."% Range" := GradeBookTemp."% Range";
+            GradeBook.Recommendation := GradeBookTemp.Recommendation;
+            GradeBook."Grade Result" := GradeBookTemp."Grade Result";
+            GradeBook.Indentation := 0;
+
+            GradeMaster.Reset();
+            GradeMaster.SetRange(Graduation, StudentMaster.Graduation);
+            GradeMaster.SetRange("Global Dimension 1 Code", StudentMaster."Global Dimension 1 Code");
+            GradeMaster.SetRange(Code, GradeBookTemp."Grade Result");
+            If GradeMaster.FindFirst() Then
+                GradeBook."Quality Point" := GradeMaster."Grade Points";
+
+            RecSemester.Reset();
+            RecSemester.SetRange(Code, StudentMaster.Semester);
+            RecSemester.SetRange(Graduation, StudentMaster.Graduation);
+            if RecSemester.FindFirst() then
+                GradeBook.Credit := RecSemester.Credit;
+
+            GradeBook."Credit Earned" := Round((GradeBook."Quality Point" * GradeBook.Credit), 0.01, '=');
+            GradeBook.Insert();
+
+            ExaminationSetup.Reset();
+            ExaminationSetup.SetRange("Global Dimension 1 Code", StudentMaster."Global Dimension 1 Code");
+            IF ExaminationSetup.FindFirst() then begin
+                IF StudentMaster.Semester = ExaminationSetup."Semester I" then begin
+                    StudentMaster."Semester I Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester I GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                end;
+
+                IF StudentMaster.Semester = ExaminationSetup."Semester II" then begin
+                    StudentMaster."Semester II Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester II GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                End;
+                IF StudentMaster.Semester = ExaminationSetup."Semester III" then begin
+                    StudentMaster."Semester III Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester III GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                End;
+                IF StudentMaster.Semester = ExaminationSetup."Semester IV" then begin
+                    StudentMaster."Semester IV Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester IV GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                End;
+                IF StudentMaster.Semester = ExaminationSetup."Semester V" then begin
+                    StudentMaster."Semester V Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester V GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                End;
+                IF StudentMaster.Semester = ExaminationSetup."Semester VI" then begin
+                    StudentMaster."Semester VI Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester VI GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                End;
+                IF StudentMaster.Semester = ExaminationSetup."Semester VII" then begin
+                    StudentMaster."Semester VII Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester VII GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                End;
+                IF StudentMaster.Semester = ExaminationSetup."Semester VIII" then begin
+                    StudentMaster."Semester VIII Credit Earned" := GradeBook."Credit Earned";
+                    StudentMaster."Semester VIII GPA" := Round((GradeBook."Credit Earned" / GradeBook.Credit), 0.01, '=');
+                End;
+
+                GradeBook_1.Reset();
+                GradeBook_1.SetRange("Student No.", StudentMaster."No.");
+                GradeBook_1.SetRange("Type of Input", GradeBook_1."Type of Input"::Best);
+                GradeBook_1.CalcSums(Credit, "Credit Earned");
+
+                StudentMaster."Net Semester CGPA" := Round((GradeBook_1."Credit Earned" / GradeBook_1.Credit), 0.01, '=');
+                StudentMaster.Updated := TRUE;
+                StudentMaster.MODIFY();
+
+                MainStudentSubject.Reset();
+                MainStudentSubject.SetRange("Student No.", StudentMaster."No.");
+                MainStudentSubject.SetRange(Semester, StudentMaster.Semester);
+                MainStudentSubject.SetRange("Academic Year", StudentMaster."Academic Year");
+                MainStudentSubject.SetRange("Global Dimension 1 Code", StudentMaster."Global Dimension 1 Code");
+                IF MainStudentSubject.FindSet() then begin
+                    MainStudentSubject.ModifyAll(MainStudentSubject.Publish, true);
+                end;
+            end;
+        END;
+    end;
+
+    /// <summary> 
+    /// Description for CreateInternalExam.
+    /// </summary>
+    /// <param name="GlobalDimension1Code">Parameter of type Code[20].</param>
+    /// <param name="DocNo">Parameter of type Code[20].</param>
+    /// <param name="ExamClass">Parameter of type Code[20].</param>
+    /// <param name="ExamType">Parameter of type Option " ","Internal","External".</param>
+    procedure CreateInternalExam(GlobalDimension1Code: Code[20]; DocNo: Code[20]; ExamClass: Code[20]; ExamType: Option " ","Internal","External")
+    var
+        ExamScheduleLine: Record "Exam Time Table Line-CS";
+        AcademicsSetupCS: Record "Academics Setup-CS";
+        InternalExamHeader: Record "Internal Exam Header-CS";
+        SubjectMaster: Record "Subject Master-CS";
+        CourseMaster: Record "Course Master-CS";
+        NoSeriesManagement: Codeunit "NoSeriesManagement";
+        NEXTNo: Code[20];
+    Begin
+        AcademicsSetupCS.Get();
+        ExamScheduleLine.Reset();
+        ExamScheduleLine.SetRange("Document No.", DocNo);
+        ExamScheduleLine.SetRange("Global Dimension 1 Code", GlobalDimension1Code);
+        ExamScheduleLine.SetRange("Exam Classification", ExamClass);
+        ExamScheduleLine.SetRange("Examiner Type", ExamType);
+        ExamScheduleLine.SetRange("Exam Date", 0D);
+        ExamScheduleLine.SetRange("Exam Slot", '');
+        ExamScheduleLine.SetRange("Exam No.", '');
+        If ExamScheduleLine.FindSet() then
+            repeat
+                NEXTNo := NoSeriesManagement.GetNextNo(AcademicsSetupCS."Internal Marks No.", 0D, TRUE);
+
+                InternalExamHeader.INIT();
+                InternalExamHeader."No." := NEXTNo;
+                InternalExamHeader."Exam Schedule Code" := ExamScheduleLine."Document No.";
+                InternalExamHeader."Course Code" := ExamScheduleLine."Course Code";
+                CourseMaster.Get(ExamScheduleLine."Course Code");
+                InternalExamHeader."Course Name" := CourseMaster.Description;
+                InternalExamHeader."Program" := ExamScheduleLine."Program";
+                InternalExamHeader."Type Of Course" := CourseMaster."Type Of Course";
+                InternalExamHeader."Academic Year" := ExamScheduleLine."Academic Year";
+                InternalExamHeader.Semester := ExamScheduleLine."Semester Code";
+                InternalExamHeader.Year := ExamScheduleLine.Year;
+                InternalExamHeader."Global Dimension 1 Code" := ExamScheduleLine."Global Dimension 1 Code";
+                InternalExamHeader."Global Dimension 2 Code" := ExamScheduleLine."Global Dimension 2 Code";
+                InternalExamHeader."Document Type" := ExamType;
+                InternalExamHeader."Exam Classification" := ExamScheduleLine."Exam Classification";
+                InternalExamHeader."Subject Class" := ExamScheduleLine."Subject Class";
+                InternalExamHeader."Subject Type" := ExamScheduleLine."Subject Type";
+                InternalExamHeader.VALIDATE("Subject Code", ExamScheduleLine."Subject Code");
+                SubjectMaster.Get(ExamScheduleLine."Subject Code", ExamScheduleLine."Course Code");
+                InternalExamHeader."Student Group" := SubjectMaster."Group Code";
+                InternalExamHeader."Maximum Mark" := SubjectMaster."Internal Maximum";
+                InternalExamHeader."Maximum Weightage" := SubjectMaster."Maximum Weightage";
+                InternalExamHeader.Status := InternalExamHeader.Status::Open;
+                InternalExamHeader.Term := ExamScheduleLine.Term;
+                InternalExamHeader."Created By" := FORMAT(UserId());
+                InternalExamHeader."Created On" := TODAY();
+                InternalExamHeader.Insert(true);
+                ExamScheduleLine."Exam No." := NEXTNo;
+                ExamScheduleLine.Modify();
+                CreateInternalExamLine(InternalExamHeader)
+            Until ExamScheduleLine.Next() = 0;
+    End;
+
+    /// <summary> 
+    /// Description for CreateInternalExamLine.
+    /// </summary>
+    /// <param name="RecInternalExamHeader">Parameter of type Record "Internal Exam Header-CS".</param>
+    procedure CreateInternalExamLine(RecInternalExamHeader: Record "Internal Exam Header-CS")
+    var
+        StudentInternalLine: Record "Internal Exam Line-CS";
+        SubjectMaster_1: Record "Subject Master-CS";
+        StudentSubject: Record "Main Student Subject-CS";
+        StudentSubject_1: Record "Main Student Subject-CS";
+        ExamScheduleLine: Record "Exam Time Table Line-CS";
+        StudentLeaveAbsence: Record "Student Leave of Absence";
+        LocLineNo: Integer;
+    Begin
+        StudentSubject.Reset();
+        StudentSubject.SetCurrentKey(StudentSubject."Student No.");
+        StudentSubject.SetRange("Global Dimension 1 Code", RecInternalExamHeader."Global Dimension 1 Code");
+        StudentSubject.SetRange("Academic Year", RecInternalExamHeader."Academic Year");
+        StudentSubject.SetRange(Semester, RecInternalExamHeader.Semester);
+        StudentSubject.SetRange("Subject Code", RecInternalExamHeader."Subject Code");
+        StudentSubject.SetRange(Course, RecInternalExamHeader."Course Code");
+        StudentSubject.SetRange(Publish, false);
+        IF StudentSubject.FindSet() then
+            repeat
+                StudentInternalLine.RESET();
+                StudentInternalLine.SETRANGE("Document No.", RecInternalExamHeader."No.");
+                IF StudentInternalLine.FINDLAST() THEN
+                    LocLineNo := StudentInternalLine."Line No." + 10000
+                ELSE
+                    LocLineNo := 10000;
+
+                StudentInternalLine.INIT();
+                StudentInternalLine."Document No." := RecInternalExamHeader."No.";
+                StudentInternalLine."Line No." := LocLineNo;
+                StudentInternalLine.Semester := StudentSubject.Semester;
+                StudentInternalLine."Type Of Course" := StudentSubject."Type Of Course";
+                StudentInternalLine.Section := StudentSubject.Section;
+                StudentInternalLine.Course := RecInternalExamHeader."Course Code";
+                StudentInternalLine."Exam Schedule No." := RecInternalExamHeader."Exam Schedule Code";
+                StudentInternalLine.Term := RecInternalExamHeader.Term;
+                StudentInternalLine."Attendance Type" := StudentInternalLine."Attendance Type"::" ";
+                StudentInternalLine."Academic Year" := StudentSubject."Academic Year";
+                StudentInternalLine."Subject Class" := StudentSubject."Subject Class";
+                StudentInternalLine."Subject Type" := StudentSubject."Subject Type";
+                StudentInternalLine."Subject Code" := StudentSubject."Subject Code";
+                StudentInternalLine."Student No." := StudentSubject."Student No.";
+                StudentInternalLine."Student Name" := StudentSubject."Student Name";
+                StudentInternalLine."Enrollment No." := StudentSubject."Enrollment No";
+                StudentInternalLine.VALIDATE(Status, RecInternalExamHeader.Status);
+                StudentInternalLine.VALIDATE("Global Dimension 1 Code", RecInternalExamHeader."Global Dimension 1 Code");
+                StudentInternalLine.Year := StudentSubject.Year;
+                StudentInternalLine."Exam Group" := RecInternalExamHeader."Exam Group";
+                StudentInternalLine."Exam Method Code" := RecInternalExamHeader."Exam Method Code";
+                StudentInternalLine."Exam Type" := RecInternalExamHeader."Exam Type";
+                StudentInternalLine."Program" := RecInternalExamHeader."Program";
+                SubjectMaster_1.Reset();
+                SubjectMaster_1.SetRange(Code, RecInternalExamHeader."Subject Code");
+                If SubjectMaster_1.FindFirst() Then begin
+                    StudentInternalLine."Maximum Weightage" := SubjectMaster_1."Maximum Weightage";
+                    StudentInternalLine."Maximum Internal  Marks" := SubjectMaster_1."Internal Maximum";
+                end;
+                StudentInternalLine."Exam Classification" := RecInternalExamHeader."Exam Classification";
+                StudentInternalLine."Created By" := Format(USERID());
+                StudentInternalLine."Created On" := TODAY();
+                StudentInternalLine.INSERT(true);
+
+                ExamScheduleLine.Reset();
+                ExamScheduleLine.SetRange("Document No.", RecInternalExamHeader."Exam Schedule Code");
+                ExamScheduleLine.SetRange("Subject Group", RecInternalExamHeader."Subject Code");
+                IF ExamScheduleLine.FindSet() then
+                    repeat
+                        StudentSubject_1.Reset();
+                        StudentSubject_1.SetRange("Student No.", StudentSubject."Student No.");
+                        StudentSubject_1.SetRange("Academic Year", StudentSubject."Academic Year");
+                        StudentSubject_1.SetRange(Semester, StudentSubject.Semester);
+                        StudentSubject_1.SetRange("Global Dimension 1 Code", StudentSubject."Global Dimension 1 Code");
+                        StudentSubject_1.SetRange(Course, StudentSubject.Course);
+                        StudentSubject_1.SetRange("Subject Code", ExamScheduleLine."Subject Code");
+                        StudentSubject_1.SetRange(Batch, ExamScheduleLine.Batch);
+                        IF StudentSubject_1.FindFirst() Then begin
+
+                            LocLineNo := LocLineNo + 10000;
+                            StudentInternalLine.INIT();
+                            StudentInternalLine."Document No." := RecInternalExamHeader."No.";
+                            StudentInternalLine."Line No." := LocLineNo;
+                            StudentInternalLine.Semester := StudentSubject_1.Semester;
+                            StudentInternalLine."Type Of Course" := StudentSubject_1."Type Of Course";
+                            StudentInternalLine.Section := StudentSubject_1.Section;
+                            StudentInternalLine.Course := RecInternalExamHeader."Course Code";
+                            StudentInternalLine."Exam Schedule No." := RecInternalExamHeader."Exam Schedule Code";
+                            StudentInternalLine."Exam Classification" := RecInternalExamHeader."Exam Classification";
+                            StudentInternalLine.Term := RecInternalExamHeader.Term;
+                            StudentInternalLine."Attendance Type" := StudentInternalLine."Attendance Type"::Present;
+                            StudentInternalLine."Academic Year" := StudentSubject_1."Academic Year";
+                            StudentInternalLine."Subject Class" := StudentSubject_1."Subject Class";
+                            StudentInternalLine."Subject Type" := StudentSubject_1."Subject Type";
+                            StudentInternalLine."Subject Code" := StudentSubject_1."Subject Code";
+                            StudentInternalLine."Student No." := StudentSubject_1."Student No.";
+                            StudentInternalLine."Student Name" := StudentSubject_1."Student Name";
+                            StudentInternalLine."Enrollment No." := StudentSubject_1."Enrollment No";
+                            StudentInternalLine.VALIDATE(Status, RecInternalExamHeader.Status);
+                            StudentInternalLine.VALIDATE("Global Dimension 1 Code", RecInternalExamHeader."Global Dimension 1 Code");
+                            StudentInternalLine.Year := StudentSubject_1.Year;
+                            StudentInternalLine."Exam Date" := ExamScheduleLine."Exam Date";
+                            StudentInternalLine."Exam Slot" := ExamScheduleLine."Exam Slot";
+                            StudentInternalLine."Start Time" := ExamScheduleLine."Start Time";
+                            StudentInternalLine."End Time" := ExamScheduleLine."End Time";
+                            StudentInternalLine.Batch := ExamScheduleLine.Batch;
+                            StudentInternalLine."Exam Type" := RecInternalExamHeader."Exam Type";
+                            StudentInternalLine."Program" := RecInternalExamHeader."Program";
+                            SubjectMaster_1.Reset();
+                            SubjectMaster_1.SetRange(Code, ExamScheduleLine."Subject Code");
+                            If SubjectMaster_1.FindFirst() Then begin
+                                StudentInternalLine."Maximum Weightage" := SubjectMaster_1."Maximum Weightage";
+                                StudentInternalLine."Maximum Internal  Marks" := SubjectMaster_1."Internal Maximum";
+                            end;
+                            StudentInternalLine."Created By" := Format(USERID());
+                            StudentInternalLine."Created On" := TODAY();
+
+                            StudentLeaveAbsence.Reset();
+                            StudentLeaveAbsence.SetRange("Student No.", StudentSubject."Student No.");
+                            StudentLeaveAbsence.SetFilter("Start Date", '<=%1', ExamScheduleLine."Exam Date");
+                            StudentLeaveAbsence.SetFilter("End Date", '>=%1', ExamScheduleLine."Exam Date");
+                            StudentLeaveAbsence.SetRange("Leave Status", StudentLeaveAbsence."Leave Status"::Granted);
+                            IF StudentLeaveAbsence.FindFirst() then begin
+                                StudentInternalLine."Leave Types" := Format(StudentLeaveAbsence."Leave Types");
+                                StudentInternalLine."Grade" := Format(StudentLeaveAbsence."Leave Types");
+                            end;
+                            StudentInternalLine.INSERT(true);
+                            ExamScheduleLine."Exam No." := RecInternalExamHeader."No.";
+                            ExamScheduleLine.Modify();
+                        end;
+                    Until ExamScheduleLine.Next() = 0;
+            until StudentSubject.Next() = 0;
+    End;
+
+    /// <summary> 
+    /// Description for CreateExternalExam.
+    /// </summary>
+    /// <param name="GlobalDimension1Code">Parameter of type Code[20].</param>
+    /// <param name="DocNo">Parameter of type Code[20].</param>
+    /// <param name="ExamClass">Parameter of type Code[20].</param>
+    /// <param name="ExamType">Parameter of type Option " ","Internal","External".</param>
+    procedure CreateExternalExam(GlobalDimension1Code: Code[20]; DocNo: Code[20]; ExamClass: Code[20]; ExamType: Option " ","Internal","External")
+    var
+        ExamScheduleLine: Record "Exam Time Table Line-CS";
+        AcademicsSetupCS: Record "Academics Setup-CS";
+        ExternalExamHeader: Record "External Exam Header-CS";
+        CourseMaster: Record "Course Master-CS";
+        SubjectMaster: Record "Subject Master-CS";
+        NoSeriesManagement: Codeunit "NoSeriesManagement";
+        NEXTNo: Code[20];
+    Begin
+        AcademicsSetupCS.Get();
+        ExamScheduleLine.Reset();
+        ExamScheduleLine.SetRange("Document No.", DocNo);
+        ExamScheduleLine.SetRange("Global Dimension 1 Code", GlobalDimension1Code);
+        ExamScheduleLine.SetRange("Exam Classification", ExamClass);
+        ExamScheduleLine.SetRange("Examiner Type", ExamType);
+        ExamScheduleLine.SetFilter("Exam Date", '<>%1', 0D);
+        ExamScheduleLine.SetRange("Exam No.", '');
+        If ExamScheduleLine.FindSet() then
+            repeat
+                NEXTNo := NoSeriesManagement.GetNextNo(AcademicsSetupCS."External Marks No.", 0D, TRUE);
+
+                ExternalExamHeader.INIT();
+                ExternalExamHeader."No." := NEXTNo;
+                ExternalExamHeader."Exam Schedule Code" := ExamScheduleLine."Document No.";
+                ExternalExamHeader."Course Code" := ExamScheduleLine."Course Code";
+                CourseMaster.Get(ExamScheduleLine."Course Code");
+                ExternalExamHeader."Course Name" := CourseMaster.Description;
+                ExternalExamHeader."Program" := ExamScheduleLine."Program";
+                ExternalExamHeader."Type Of Course" := CourseMaster."Type Of Course";
+                ExternalExamHeader."Academic Year" := ExamScheduleLine."Academic Year";
+                ExternalExamHeader.Semester := ExamScheduleLine."Semester Code";
+                ExternalExamHeader.Year := ExamScheduleLine.Year;
+                ExternalExamHeader."Global Dimension 1 Code" := ExamScheduleLine."Global Dimension 1 Code";
+                ExternalExamHeader."Global Dimension 2 Code" := ExamScheduleLine."Global Dimension 2 Code";
+                ExternalExamHeader."Document Type" := ExamType;
+                ExternalExamHeader."Subject Class" := ExamScheduleLine."Subject Class";
+                ExternalExamHeader."Subject Type" := ExamScheduleLine."Subject Type";
+                ExternalExamHeader.VALIDATE("Subject Code", ExamScheduleLine."Subject Code");
+                SubjectMaster.Get(ExamScheduleLine."Subject Code", ExamScheduleLine."Course Code");
+                ExternalExamHeader."External Maximum" := SubjectMaster."External Maximum";
+                ExternalExamHeader."Total Maximum" := SubjectMaster."Total Maximum";
+                ExternalExamHeader.Status := ExternalExamHeader.Status::Open;
+                ExternalExamHeader.Term := ExamScheduleLine.Term;
+                // ExternalExamHeader."Exam Date" := ExamScheduleLine."Exam Date";
+                // ExternalExamHeader."Exam Slot" := ExamScheduleLine."Exam Slot";
+                ExternalExamHeader."Exam Classification" := ExamScheduleLine."Exam Classification";
+                ExternalExamHeader."Created By" := FORMAT(UserId());
+                ExternalExamHeader."Created On" := TODAY();
+                ExternalExamHeader.Insert(true);
+                CreateexternalExamLine(ExternalExamHeader);
+            Until ExamScheduleLine.Next() = 0;
+    End;
+
+    /// <summary> 
+    /// Description for CreateExternalExamLine.
+    /// </summary>
+    /// <param name="RecExternalExamHeader">Parameter of type Record "External Exam Header-CS".</param>
+    procedure CreateExternalExamLine(RecExternalExamHeader: Record "External Exam Header-CS")
+    var
+        StudentExternalLine: Record "External Exam Line-CS";
+        SubjectMaster_1: Record "Subject Master-CS";
+        StudentSubject: Record "Main Student Subject-CS";
+        ExamScheduleLine: Record "Exam Time Table Line-CS";
+        StudentLeaveAbsence: Record "Student Leave of Absence";
+        LocLineNo: Integer;
+    Begin
+        ExamScheduleLine.Reset();
+        ExamScheduleLine.SetRange("Document No.", RecExternalExamHeader."Exam Schedule Code");
+        ExamScheduleLine.SetRange("Subject Code", RecExternalExamHeader."Subject Code");
+        ExamScheduleLine.SetFilter("Exam Date", '<>%1', 0D);
+        ExamScheduleLine.SetRange("Exam No.", '');
+        IF ExamScheduleLine.FindSet() then
+            repeat
+                StudentSubject.Reset();
+                StudentSubject.SetCurrentKey(StudentSubject."Student No.");
+                StudentSubject.SetRange("Global Dimension 1 Code", RecExternalExamHeader."Global Dimension 1 Code");
+                StudentSubject.SetRange("Academic Year", RecExternalExamHeader."Academic Year");
+                StudentSubject.SetRange(Semester, RecExternalExamHeader.Semester);
+                StudentSubject.SetRange("Subject Code", RecExternalExamHeader."Subject Code");
+                StudentSubject.SetRange(Course, RecExternalExamHeader."Course Code");
+                StudentSubject.SetRange(Batch, ExamScheduleLine.Batch);
+                StudentSubject.SetRange(Publish, false);
+                IF StudentSubject.FindSet() then
+                    repeat
+                        StudentExternalLine.RESET();
+                        StudentExternalLine.SETRANGE("Document No.", RecExternalExamHeader."No.");
+                        IF StudentExternalLine.FINDLAST() THEN
+                            LocLineNo := StudentExternalLine."Line No." + 10000
+                        ELSE
+                            LocLineNo := 10000;
+
+                        StudentExternalLine.INIT();
+                        StudentExternalLine."Document No." := RecExternalExamHeader."No.";
+                        StudentExternalLine."Line No." := LocLineNo;
+                        StudentExternalLine.Semester := StudentSubject.Semester;
+                        StudentExternalLine."Type Of Course" := StudentSubject."Type Of Course";
+                        StudentExternalLine."Exam Schedule No." := RecExternalExamHeader."Exam Schedule Code";
+                        StudentExternalLine.Section := StudentSubject.Section;
+                        StudentExternalLine.Course := RecExternalExamHeader."Course Code";
+                        StudentExternalLine."Exam Classification" := RecExternalExamHeader."Exam Classification";
+                        StudentExternalLine.Term := RecExternalExamHeader.Term;
+                        StudentExternalLine."Exam Date" := ExamScheduleLine."Exam Date";
+                        StudentExternalLine."Exam Slot" := ExamScheduleLine."Exam Slot";
+                        StudentExternalLine."Start Time" := ExamScheduleLine."Start Time New";
+                        StudentExternalLine."End Time" := ExamScheduleLine."End Time New";
+                        StudentExternalLine."Attendance Type" := StudentExternalLine."Attendance Type"::Present;
+                        StudentExternalLine."Academic Year" := StudentSubject."Academic Year";
+                        StudentExternalLine."Subject Class" := StudentSubject."Subject Class";
+                        StudentExternalLine."Subject Type" := StudentSubject."Subject Type";
+                        StudentExternalLine."Subject Code" := StudentSubject."Subject Code";
+                        StudentExternalLine."Student No." := StudentSubject."Student No.";
+                        StudentExternalLine."Student Name" := StudentSubject."Student Name";
+                        StudentExternalLine."Enrollment No." := StudentSubject."Enrollment No";
+                        StudentExternalLine.Batch := StudentSubject.Batch;
+                        StudentExternalLine.VALIDATE(Status, RecExternalExamHeader.Status);
+                        StudentExternalLine.VALIDATE("Global Dimension 1 Code", RecExternalExamHeader."Global Dimension 1 Code");
+                        StudentExternalLine.Year := StudentSubject.Year;
+                        StudentExternalLine."Exam Type" := RecExternalExamHeader."Exam Type";
+                        StudentExternalLine."Program" := RecExternalExamHeader."Program";
+                        SubjectMaster_1.Reset();
+                        SubjectMaster_1.SetRange(Code, RecExternalExamHeader."Subject Code");
+                        If SubjectMaster_1.FindFirst() Then begin
+                            StudentExternalLine."External Maximum" := SubjectMaster_1."External Maximum";
+                            StudentExternalLine."Total Maximum" := SubjectMaster_1."Total Maximum";
+                        end;
+                        StudentExternalLine."Created By" := Format(USERID());
+                        StudentExternalLine."Created On" := TODAY();
+                        StudentLeaveAbsence.Reset();
+                        StudentLeaveAbsence.SetRange("Student No.", StudentSubject."Student No.");
+                        StudentLeaveAbsence.SetFilter("Start Date", '<=%1', ExamScheduleLine."Exam Date");
+                        StudentLeaveAbsence.SetFilter("End Date", '>=%1', ExamScheduleLine."Exam Date");
+                        StudentLeaveAbsence.SetRange("Leave Status", StudentLeaveAbsence."Leave Status"::Granted);
+                        IF StudentLeaveAbsence.FindFirst() then begin
+                            StudentExternalLine."Leave Types" := Format(StudentLeaveAbsence."Leave Types");
+                            StudentExternalLine."Std. Grade" := Format(StudentLeaveAbsence."Leave Types");
+                        end;
+                        StudentExternalLine.INSERT(true);
+                    until StudentSubject.Next() = 0;
+                ExamScheduleLine."Exam No." := RecExternalExamHeader."No.";
+                ExamScheduleLine.Modify();
+            Until ExamScheduleLine.Next() = 0;
+    End;
+
+    /// <summary> 
+    /// Description for GenerateExternalExamSchedule.
+    /// </summary>
+    /// <param name="DocNo">Parameter of type Code[20].</param>
+    procedure GenerateExternalExamSchedule(DocNo: Code[20])
+    var
+        ExamScheduleLine: Record "Exam Time Table Line-CS";
+        ExamScheduleHead: Record "Exam Time Table Head-CS";
+        CourseSubjectLine: Record "Course Wise Subject Line-CS";
+        BatchMaster: Record "Batch-CS";
+        MainStudentSubject: Record "Main Student Subject-CS";
+        LineNo: Integer;
+    begin
+        Message('Done');
+        LineNo := 0;
+        ExamScheduleHead.Get(DocNo);
+        CourseSubjectLine.Reset();
+        CourseSubjectLine.SETRANGE("Academic Year", ExamScheduleHead."Academic Year");
+        CourseSubjectLine.SETRANGE("Global Dimension 1 Code", ExamScheduleHead."Global Dimension 1 Code");
+        CourseSubjectLine.SETRANGE(Examination, true);
+        CourseSubjectLine.SETRANGE("Level Description", CourseSubjectLine."Level Description"::"External Examination");
+        IF CourseSubjectLine.FindSet() THEN
+            repeat
+                MainStudentSubject.Reset();
+                MainStudentSubject.SETRANGE("Academic Year", CourseSubjectLine."Academic Year");
+                MainStudentSubject.SETRANGE("Global Dimension 1 Code", CourseSubjectLine."Global Dimension 1 Code");
+                MainStudentSubject.SETRANGE("Course", CourseSubjectLine."Course Code");
+                MainStudentSubject.SETRANGE(Semester, CourseSubjectLine."Semester");
+                MainStudentSubject.SetRange("Subject Code", CourseSubjectLine."Subject Code");
+                MainStudentSubject.SetRange(Graduation, CourseSubjectLine."Program");
+                MainStudentSubject.SetRange(Publish, false);
+                MainStudentSubject.SetFilter(Batch, '<>%1', '');
+                If MainStudentSubject.FindFirst() then
+                    repeat
+                        IF StrPos(MainStudentSubject.Batch, CourseSubjectLine."Applicable Batch") <> 0 then
+                            Error('%1 Batch mapped on Student Subject for the Student No. %2 But not mapped on Course Subject', MainStudentSubject.Batch, MainStudentSubject."Student No.");
+                    Until MainStudentSubject.Next() = 0;
+                IF CourseSubjectLine."Applicable Batch" <> '' THEN BEGIN
+                    BatchMaster.RESET();
+                    BatchMaster.SetFilter("Code", CourseSubjectLine."Applicable Batch");
+                    BatchMaster.SETRANGE("Global Dimension 1 Code", CourseSubjectLine."Global Dimension 1 Code");
+                    IF BatchMaster.FINDSET() THEN
+                        REPEAT
+                            MainStudentSubject.Reset();
+                            MainStudentSubject.SETRANGE("Academic Year", CourseSubjectLine."Academic Year");
+                            MainStudentSubject.SETRANGE("Global Dimension 1 Code", CourseSubjectLine."Global Dimension 1 Code");
+                            MainStudentSubject.SETRANGE("Course", CourseSubjectLine."Course Code");
+                            MainStudentSubject.SETRANGE(Semester, CourseSubjectLine."Semester");
+                            MainStudentSubject.SetRange("Subject Code", CourseSubjectLine."Subject Code");
+                            MainStudentSubject.SetRange(Graduation, CourseSubjectLine."Program");
+                            MainStudentSubject.SetRange(Publish, false);
+                            MainStudentSubject.SetRange(Batch, BatchMaster.Code);
+                            If MainStudentSubject.FindFirst() then begin
+                                ExamScheduleLine.Init();
+                                ExamScheduleLine."Document No." := DocNo;
+                                ExamScheduleLine."Line No." := LineNo + 10000;
+                                ExamScheduleLine."Subject Code" := CourseSubjectLine."Subject Code";
+                                ExamScheduleLine."Subject Name" := CourseSubjectLine.Description;
+                                ExamScheduleLine."Subject Group" := CourseSubjectLine."Subject Group";
+                                ExamScheduleLine."Subject Type" := CourseSubjectLine."Subject Type";
+                                ExamScheduleLine."Subject Class" := CourseSubjectLine."Subject Classification";
+                                ExamScheduleLine."Course Code" := CourseSubjectLine."Course Code";
+                                ExamScheduleLine."Program" := CourseSubjectLine."Program";
+                                ExamScheduleLine."Semester Code" := CourseSubjectLine.Semester;
+                                ExamScheduleLine.Year := CourseSubjectLine.Year;
+                                ExamScheduleLine.Batch := BatchMaster."Code";
+                                ExamScheduleLine."Examiner Type" := ExamScheduleHead."Exam Type";
+                                ExamScheduleLine."Academic Year" := ExamScheduleHead."Academic Year";
+                                ExamScheduleLine."Exam Classification" := ExamScheduleHead."Exam Classification";
+                                ExamScheduleLine."Global Dimension 1 Code" := ExamScheduleHead."Global Dimension 1 Code";
+                                ExamScheduleLine.Term := ExamScheduleHead.Term;
+                                ExamScheduleLine.Insert(true);
+                                LineNo := ExamScheduleLine."Line No.";
+                            End;
+                        Until BatchMaster.Next() = 0;
+                End Else begin
+                    MainStudentSubject.Reset();
+                    MainStudentSubject.SETRANGE("Academic Year", CourseSubjectLine."Academic Year");
+                    MainStudentSubject.SETRANGE("Global Dimension 1 Code", CourseSubjectLine."Global Dimension 1 Code");
+                    MainStudentSubject.SETRANGE("Course", CourseSubjectLine."Course Code");
+                    MainStudentSubject.SETRANGE(Semester, CourseSubjectLine."Semester");
+                    MainStudentSubject.SetRange("Subject Code", CourseSubjectLine."Subject Code");
+                    MainStudentSubject.SetRange(Graduation, CourseSubjectLine."Program");
+                    MainStudentSubject.SetRange(Publish, false);
+                    If MainStudentSubject.FindFirst() then begin
+                        ExamScheduleLine.Init();
+                        ExamScheduleLine."Document No." := DocNo;
+                        ExamScheduleLine."Line No." := LineNo + 10000;
+                        ExamScheduleLine."Subject Code" := CourseSubjectLine."Subject Code";
+                        ExamScheduleLine."Subject Name" := CourseSubjectLine.Description;
+                        ExamScheduleLine."Subject Group" := CourseSubjectLine."Subject Group";
+                        ExamScheduleLine."Subject Type" := CourseSubjectLine."Subject Type";
+                        ExamScheduleLine."Subject Class" := CourseSubjectLine."Subject Classification";
+                        ExamScheduleLine."Course Code" := CourseSubjectLine."Course Code";
+                        ExamScheduleLine."Program" := CourseSubjectLine."Program";
+                        ExamScheduleLine."Semester Code" := CourseSubjectLine.Semester;
+                        ExamScheduleLine.Year := CourseSubjectLine.Year;
+                        ExamScheduleLine.Batch := CourseSubjectLine."Applicable Batch";
+                        ExamScheduleLine."Examiner Type" := ExamScheduleHead."Exam Type";
+                        ExamScheduleLine."Academic Year" := ExamScheduleHead."Academic Year";
+                        ExamScheduleLine."Exam Classification" := ExamScheduleHead."Exam Classification";
+                        ExamScheduleLine."Global Dimension 1 Code" := ExamScheduleHead."Global Dimension 1 Code";
+                        ExamScheduleLine.Term := ExamScheduleHead.Term;
+                        ExamScheduleLine.Insert(true);
+                        LineNo := ExamScheduleLine."Line No.";
+                    end;
+                end;
+            Until CourseSubjectLine.Next() = 0;
+    end;
+
+    /// <summary> 
+    /// Description for StudentPromotionHeader.
+    /// </summary>
+    /// <param name="CurrentAcademicYear">Parameter of type Code[20].</param>
+    /// <param name="NextAcademicYear">Parameter of type Code[20].</param>
+    /// <param name="CurrentSemesterType">Parameter of type Option "FALL","SPRING".</param>
+    /// <param name="NextSemesterType">Parameter of type Option "FALL","SPRING".</param>
+    /// <param name="InstituteCode">Parameter of type Code[20].</param>
+    procedure StudentPromotionHeader(CurrentAcademicYear: Code[20]; NextAcademicYear: Code[20]; CurrentSemesterType: Option "FALL","SPRING"; NextSemesterType: Option "FALL","SPRING"; InstituteCode: Code[20])
+    var
+        EducationSetupCS: Record "Education Setup-CS";
+        SemesterMaster: Record "Semester Master-CS";
+        StudentMasterCS: Record "Student Master-CS";
+        PromotionHeaderCS: Record "Promotion Header-CS";
+        NoSeriesManagement: Codeunit "NoSeriesManagement";
+        NextNo: Code[20];
+    begin
+        EducationSetupCS.Reset();
+        EducationSetupCS.SETRANGE("Global Dimension 1 Code", InstituteCode);
+        IF EducationSetupCS.FINDFIRST() THEN BEGIN
+            EducationSetupCS.TestField(EducationSetupCS."Promotion No.");
+        END ELSE
+            ERROR('Education Setup Not Defined !!');
+
+        SemesterMaster.Reset();
+        SemesterMaster.SetRange("Global Dimension 1 Code", InstituteCode);
+        If SemesterMaster.FindSet() then
+            REPEAT
+                StudentMasterCS.Reset();
+                StudentMasterCS.SetRange("Global Dimension 1 Code", InstituteCode);
+                StudentMasterCS.SetRange("Academic Year", CurrentAcademicYear);
+                StudentMasterCS.SetRange(Semester, SemesterMaster.Code);
+                If StudentMasterCS.FindFirst() then begin
+                    NextNo := NoSeriesManagement.GetNextNo(EducationSetupCS."Promotion No.", 0D, TRUE);
+
+                    PromotionHeaderCS.INIT();
+                    PromotionHeaderCS."No." := NextNo;
+                    PromotionHeaderCS.VALIDATE(Course, StudentMasterCS."Course Code");
+                    PromotionHeaderCS."Academic Year" := CurrentAcademicYear;
+                    PromotionHeaderCS."Next Academic Year" := NextAcademicYear;
+                    PromotionHeaderCS.Term := CurrentSemesterType;
+                    PromotionHeaderCS."Next Term" := NextSemesterType;
+                    PromotionHeaderCS.Semester := StudentMasterCS.Semester;
+                    PromotionHeaderCS.Year := StudentMasterCS.Year;
+                    PromotionHeaderCS.Graduation := StudentMasterCS.Graduation;
+                    PromotionHeaderCS."Created By" := FORMAT(UserId());
+                    PromotionHeaderCS."Created On" := TODAY();
+                    PromotionHeaderCS.INSERT();
+                    GetStudentsPromotionLine(PromotionHeaderCS);
+                end;
+            UNTIL SemesterMaster.NEXT() = 0;
+    END;
+
+    /// <summary> 
+    /// Description for GetStudentsPromotionLine.
+    /// </summary>
+    /// <param name="PromotionHeaderCS">Parameter of type Record "Promotion Header-CS".</param>
+    procedure GetStudentsPromotionLine(PromotionHeaderCS: Record "Promotion Header-CS")
+    var
+        StudentMasterCS: Record "Student Master-CS";
+        PromotionLineCS: Record "Promotion Line-CS";
+        StudentStatusRec: Record "Student Status";
+        GradeBook: Record "Grade Book";
+        PromotionCriteria: Record "Promotion Criteria-CS";
+        "LocalLineNo.": Integer;
+        ShowMessage: Boolean;
+        PreviousSemesterNo: Decimal;
+        PreviousSemesterNo1: Decimal;
+        AvailablePoints: Decimal;
+        TotalAvailablePoints: Decimal;
+        EarndCredit: Decimal;
+        AdjustedTotal: Decimal;
+    begin
+        ShowMessage := false;
+        "LocalLineNo." := 0;
+
+        StudentMasterCS.Reset();
+        StudentMasterCS.SETCURRENTKEY("Course Code", Semester, "Academic Year", Year, Section);
+        StudentMasterCS.SETRANGE(Graduation, PromotionHeaderCS.Graduation);
+        StudentMasterCS.SETRANGE("Global Dimension 1 Code", PromotionHeaderCS."Global Dimension 1 Code");
+        StudentMasterCS.SETRANGE("Academic Year", PromotionHeaderCS."Academic Year");
+        StudentMasterCS.SETRANGE("Course Code", PromotionHeaderCS.Course);
+        StudentMasterCS.SETRANGE(Semester, PromotionHeaderCS.Semester);
+        StudentMasterCS.SETRANGE(Year, PromotionHeaderCS.Year);
+        StudentMasterCS.SetRange(Term, PromotionHeaderCS.Term);
+        // StudentMasterCS.SETRANGE("Pending For Registration", FALSE);
+        //StudentMasterCS.SETRANGE("Student Status", StudentMasterCS."Student Status"::Student);
+        IF StudentMasterCS.FINDSET() THEN
+            REPEAT
+                if StudentStatusRec.Get(StudentMasterCS.Status, StudentMasterCS."Global Dimension 1 Code") then
+                    if StudentStatusRec.Status = StudentStatusRec.Status::Active then begin
+                        PreviousSemesterNo1 := 0;
+                        TotalAvailablePoints := 0;
+                        "LocalLineNo." += 10000;
+                        AdjustedTotal := 0;
+                        PromotionLineCS.INIT();
+                        PromotionLineCS."Document No." := PromotionHeaderCS."No.";
+                        PromotionLineCS."Line No." := "LocalLineNo.";
+                        PromotionLineCS."Student No." := StudentMasterCS."No.";
+                        PromotionLineCS."Enrollment No." := StudentMasterCS."Enrollment No.";
+                        PromotionLineCS."Student Name" := StudentMasterCS."Student Name";
+                        PromotionLineCS."Type Of Course" := PromotionHeaderCS."Type Of Course";
+                        PromotionLineCS."Course Code" := StudentMasterCS."Course Code";
+                        PromotionLineCS.Semester := StudentMasterCS.Semester;
+                        PromotionLineCS.Section := StudentMasterCS.Section;
+                        PromotionLineCS.Year := StudentMasterCS.Year;
+                        PromotionLineCS."Graduation Code" := StudentMasterCS.Graduation;
+                        PromotionLineCS."Department Code" := StudentMasterCS.Department;
+                        PromotionLineCS."Global Dimension 1 Code" := StudentMasterCS."Global Dimension 1 Code";
+                        PromotionLineCS."Global Dimension 2 Code" := StudentMasterCS."Global Dimension 2 Code";
+                        PromotionLineCS."Academic Year" := StudentMasterCS."Academic Year";
+                        PromotionLineCS."Admitted Year" := StudentMasterCS."Admitted Year";
+                        PromotionLineCS."Promoted Semester" := StudentMasterCS.Semester;
+                        PromotionLineCS."Promoted Year" := StudentMasterCS.Year;
+                        PromotionLineCS."Promoted  Academic Year" := StudentMasterCS."Academic Year";
+
+                        // IF PromotionHeaderCS."Next Term" = PromotionHeaderCS."Next Term"::FALL Then begin
+                        //     PromotionCriteria.Reset();
+                        //     PromotionCriteria.SetRange(Year, PromotionHeaderCS.Semester);
+                        //     PromotionCriteria.SetRange("Global Dimension 1 Code", PromotionHeaderCS."Global Dimension 1 Code");
+                        //     IF PromotionCriteria.FindSet() then begin
+                        //         GradeBook.Reset();
+                        //         GradeBook.SetRange("Student No.", StudentMasterCS."No.");
+                        //         GradeBook.SetRange(Semester, StudentMasterCS.Semester);
+                        //         GradeBook.SetRange("Academic Year", StudentMasterCS."Academic Year");
+                        //         GradeBook.SetRange("Global Dimension 1 Code", StudentMasterCS."Global Dimension 1 Code");
+                        //         GradeBook.SetRange("Type of Input", GradeBook."Type of Input"::Best);
+                        //         If GradeBook.FindLast() Then
+                        //             EarndCredit := ((GradeBook."Earned Points" / GradeBook."Available Points") * PromotionCriteria."Passing Input Point %");
+                        //     end;
+                        //     PromotionLineCS."Earnd Percentage" := Round((EarndCredit / PromotionCriteria."Passing Input Point %") * 100, 0.01, '=');
+                        // end Else begin
+                        //     PromotionCriteria.Reset();
+                        //     PromotionCriteria.SetRange(Year, PromotionHeaderCS.Year);
+                        //     PromotionCriteria.SetRange("Global Dimension 1 Code", PromotionHeaderCS."Global Dimension 1 Code");
+                        //     PromotionCriteria.CalcSums(PromotionCriteria."Adjusted Input Point %");
+                        //     IF PromotionCriteria.FindSet() then
+                        //         Repeat
+                        //             IF PromotionCriteria."Adjusted Input Point %" <> 100 then
+                        //                 Error('Adjusted Input Point % should be equal to 100 for Year %1 in Promotion Criteria', PromotionCriteria.Year);
+                        //             PreviousSemesterNo := 0;
+                        //             AvailablePoints := 0;
+                        //             GradeBook.Reset();
+                        //             GradeBook.SetRange("Student No.", StudentMasterCS."No.");
+                        //             GradeBook.SetRange(Semester, PromotionCriteria.Semester);
+                        //             GradeBook.SetRange("Academic Year", StudentMasterCS."Academic Year");
+                        //             GradeBook.SetRange("Global Dimension 1 Code", StudentMasterCS."Global Dimension 1 Code");
+                        //             GradeBook.SetRange("Type of Input", GradeBook."Type of Input"::Best);
+                        //             If GradeBook.FindLast() Then begin
+                        //                 EarndCredit := ((GradeBook."Earned Points" / GradeBook."Available Points") * PromotionCriteria."Passing Input Point %");
+
+                        //                 IF PromotionCriteria."Adjusted Input Point %" <> 0 then begin
+                        //                     PreviousSemesterNo := ((EarndCredit / PromotionCriteria."Passing Input Point %") * PromotionCriteria."Adjusted Input Point %");
+                        //                     AvailablePoints := PromotionCriteria."Adjusted Input Point %";
+                        //                 End else begin
+                        //                     PreviousSemesterNo := EarndCredit;
+                        //                     AvailablePoints := PromotionCriteria."Passing Input Point %";
+                        //                 End;
+                        //             end;
+                        //             PreviousSemesterNo1 := PreviousSemesterNo1 + PreviousSemesterNo;
+                        //             TotalAvailablePoints := TotalAvailablePoints + AvailablePoints;
+                        //         Until PromotionCriteria.Next() = 0;
+                        //     PromotionLineCS."Earnd Percentage" := Round((PreviousSemesterNo1 / TotalAvailablePoints) * 100, 0.01, '=');
+                        // end;
+
+                        PromotionLineCS."Created By" := FORMAT(UserId());
+                        PromotionLineCS."Created On" := TODAY();
+                        PromotionLineCS.INSERT();
+                    end;
+            UNTIL StudentMasterCS.NEXT() = 0;
+    end;
+
+    /// <summary> 
+    /// Description for AcademicsPromotion.
+    /// </summary>
+    /// <param name="StudentPromotionHeader">Parameter of type Record "Promotion Header-CS".</param>
+    procedure AcademicsPromotion(StudentPromotionHeader: Record "Promotion Header-CS")
+    Var
+        StudentPromotionLine: Record "Promotion Line-CS";
+        StudentMasterCS: Record "Student Master-CS";
+        CourseSemMasterCS: Record "Course Sem. Master-CS";
+        SemesterMaster: Record "Semester Master-CS";
+        PromotionCriteria: Record "Promotion Criteria-CS";
+        OptOut: Record "Opt Out";
+        MainStudentSubject: Record "Main Student Subject-CS";
+        StudStatus: Record "Student Status";
+        StudStatusMgt: Codeunit "Student Status Mangement";
+        SQNo: Integer;
+        SQNo1: Integer;
+        NextSemester: Code[20];
+        PreviousSemester: Code[20];
+        NextYear: Code[20];
+        PreviousYear: Code[20];
+        MinimumPer: Decimal;
+        MaximumPer: Decimal;
+        RecHoldStatusLedger: Record "Hold Status Ledger";
+        StudentHoldRec: Record "Student Hold";
+        StudentStatusMangCod: Codeunit "Student Status Mangement";
+        HousingMailCod: Codeunit "Hosusing Mail";
+        LastNo: Integer;
+        StudentTimeLine: Record "Student Time Line";
+    begin
+        CourseSemMasterCS.Reset();
+        CourseSemMasterCS.SETCURRENTKEY("Semester Code");
+        CourseSemMasterCS.SETRANGE("Course Code", StudentPromotionHeader."Course");
+        CourseSemMasterCS.SETRANGE("Semester Code", StudentPromotionHeader.Semester);
+        IF CourseSemMasterCS.FINDFIRST() THEN begin
+            SQNo := CourseSemMasterCS."Sequence No" + 1;
+            SQNo1 := CourseSemMasterCS."Sequence No" - 1;
+        end;
+
+        IF SQNo <> 0 Then begin
+            CourseSemMasterCS.Reset();
+            CourseSemMasterCS.SetRange("Sequence No", SQNo);
+            IF CourseSemMasterCS.FindFirst() then
+                NextSemester := CourseSemMasterCS."Semester Code";
+        end;
+        IF SQNo1 <> 0 Then begin
+            CourseSemMasterCS.Reset();
+            CourseSemMasterCS.SetRange("Sequence No", SQNo1);
+            IF CourseSemMasterCS.FindFirst() then
+                PreviousSemester := CourseSemMasterCS."Semester Code";
+        end;
+
+        SemesterMaster.Reset();
+        SemesterMaster.SetRange(Code, NextSemester);
+        IF SemesterMaster.FindFirst() then
+            NextYear := SemesterMaster.Year;//arv
+
+        SemesterMaster.Reset();
+        SemesterMaster.SetRange(Code, PreviousSemester);
+        IF SemesterMaster.FindFirst() then
+            PreviousYear := SemesterMaster.Year;//arv
+
+        StudentPromotionLine.Reset();
+        StudentPromotionLine.SetRange("Document No.", StudentPromotionHeader."No.");
+        IF StudentPromotionLine.FindSet() then
+            repeat
+
+                // MinimumPer := 0;
+                // MaximumPer := 0;
+                // PromotionCriteria.Reset();
+                // PromotionCriteria.SetRange("Global Dimension 1 Code", StudentPromotionLine."Global Dimension 1 Code");
+                // PromotionCriteria.SetRange(Semester, StudentPromotionLine.Semester);
+                // PromotionCriteria.SetRange("Academic Year", StudentPromotionLine."Academic Year");
+                // PromotionCriteria.SetRange("Admitted Year", StudentPromotionLine."Admitted Year");
+                // IF PromotionCriteria.FindFirst() then begin
+                //     MinimumPer := PromotionCriteria."Minimum Passing %";
+                //     MaximumPer := PromotionCriteria."Maximum Passing %";
+                // end;
+
+
+                //IF StudentPromotionLine."Earnd Percentage" >= MaximumPer then begin
+                //if TempStudentPromotion(StudentPromotionLine."Student No.") then begin
+                StudentMasterCS.Reset();
+                StudentMasterCS.SETRANGE(StudentMasterCS."No.", StudentPromotionLine."Student No.");
+                IF StudentMasterCS.FINDFIRST() THEN BEGIN
+                    StudentMasterCS.VALIDATE(Semester, NextSemester);
+                    // StudentMasterCS.VALIDATE("Remaining Academic SAP", (StudentMasterCS."Remaining Academic SAP" - 1));
+                    StudentMasterCS.VALIDATE(Year, NextYear);
+                    StudentMasterCS.VALIDATE("Academic Year", StudentPromotionHeader."Next Academic Year");
+                    StudentMasterCS.VALIDATE("OLR Completed", false);
+                    StudentMasterCS.Validate("Registrar Signoff", false);
+                    StudStatus.Reset();
+                    StudStatus.GET(StudentMasterCS.Status, StudentMasterCS."Global Dimension 1 Code");
+                    StudentMasterCS.VALIDATE(Status, StudStatusMgt.StudentSemPromotion(StudentMasterCS."No.", StudentMasterCS.Status, StudentMasterCS.Semester, StudentMasterCS."Global Dimension 1 Code"));
+                    StudentMasterCS.Modify();
+                    StudentTimeLine.InsertRecordFun(StudentMasterCS."No.", StudentMasterCS."Student Name", 'Student ' + StudentMasterCS."No." + ' has been promoted to ' + StudentMasterCS.Semester, UserId(), Today());
+                    StudStatusMgt.EnableStudentWiseHold(StudentMasterCS);
+                    //olr existing student email pending
+                    HousingMailCod.ReturningStudentOnlineRegistrationEmail(StudentMasterCS."No.");
+
+                    RecHoldStatusLedger.Reset();
+                    if RecHoldStatusLedger.FINDLAST() then
+                        LastNo := RecHoldStatusLedger."Entry No." + 1
+                    else
+                        LastNo := 1;
+
+                    RecHoldStatusLedger.Init();
+                    RecHoldStatusLedger."Entry No." := LastNo;
+                    RecHoldStatusLedger."Student No." := StudentMasterCS."No.";
+                    RecHoldStatusLedger."Student Name" := StudentMasterCS."Student Name";
+                    RecHoldStatusLedger."Academic Year" := StudentMasterCS."Academic Year";
+                    RecHoldStatusLedger."Admitted Year" := StudentMasterCS."Admitted Year";
+                    RecHoldStatusLedger.Semester := StudentMasterCS.Semester;
+                    RecHoldStatusLedger."Entry Date" := Today();
+                    RecHoldStatusLedger."Entry Time" := Time();
+                    RecHoldStatusLedger."Global Dimension 1 Code" := StudentMasterCS."Global Dimension 1 Code";
+                    RecHoldStatusLedger."Global Dimension 2 Code" := StudentMasterCS."Global Dimension 2 Code";
+                    RecHoldStatusLedger."User ID" := FORMAT(UserId());
+                    RecHoldStatusLedger."Hold Type" := RecHoldStatusLedger."Hold Type"::"Registrar Sign-off";
+
+                    StudentHoldRec.Reset();
+                    StudentHoldRec.SetRange("Global Dimension 1 Code", StudentMasterCS."Global Dimension 1 Code");
+                    StudentHoldRec.SetRange("Hold Type", StudentHoldRec."Hold Type"::"Registrar Sign-off");
+                    StudentHoldRec.FindFirst();
+
+                    RecHoldStatusLedger."Hold Code" := StudentHoldRec."Hold Code";
+                    RecHoldStatusLedger."Hold Description" := StudentHoldRec."Hold Description";
+                    RecHoldStatusLedger.Status := RecHoldStatusLedger.Status::Disable;
+                    RecHoldStatusLedger.Insert();
+                    //HousingMailCod.HousingAutomaticVacatebyStudentNo(StudentMasterCS."No.");
+
+                END;
+
+                StudentPromotionLine."Promoted Semester" := NextSemester;
+                StudentPromotionLine."Promoted Year" := NextYear;
+                StudentPromotionLine."Promoted  Academic Year" := StudentPromotionHeader."Next Academic Year";
+                StudentPromotionLine."Student Promoted" := TRUE;
+                StudentPromotionLine.Modify();
+            //end;
+
+            // IF (StudentPromotionLine."Earnd Percentage" < MaximumPer) AND (StudentPromotionLine."Earnd Percentage" > MinimumPer) then begin
+            //     OptOut.Reset();
+            //     OptOut.SetRange("Student No.", StudentPromotionLine."Student No.");
+            //     OptOut.SetRange("Academic Year", StudentPromotionLine."Academic Year");
+            //     OptOut.SetRange(Semester, StudentPromotionLine.Semester);
+            //     OptOut.SetRange("Application Type", OptOut."Application Type"::"Repeat");
+            //     OptOut.SetRange(Status, OptOut.Status::Submit);
+            //     OptOut.SetRange("Application Used", false);
+            //     IF Not OptOut.FindFirst() then begin
+            //         StudentMasterCS.Reset();
+            //         StudentMasterCS.SETRANGE(StudentMasterCS."No.", StudentPromotionLine."Student No.");
+            //         IF StudentMasterCS.FINDFIRST() THEN BEGIN
+            //             StudentMasterCS.VALIDATE(Semester, NextSemester);
+            //             StudentMasterCS.VALIDATE("Remaining Academic SAP", (StudentMasterCS."Remaining Academic SAP" - 1));
+            //             StudentMasterCS.VALIDATE(Year, NextYear);
+            //             StudentMasterCS.VALIDATE("Academic Year", StudentPromotionHeader."Next Academic Year");
+            //             StudentMasterCS.VALIDATE("Pending For Registration", TRUE);
+            //             StudentMasterCS.Modify();
+            //         END;
+
+            //         StudentPromotionLine."Promoted Semester" := NextSemester;
+            //         StudentPromotionLine."Promoted Year" := NextYear;
+            //         StudentPromotionLine."Promoted  Academic Year" := StudentPromotionHeader."Next Academic Year";
+            //         StudentPromotionLine."Student Promoted" := TRUE;
+            //         StudentPromotionLine.Modify();
+            //     end Else begin
+            //         IF OptOut."Type Of Repeat" = OptOut."Type Of Repeat"::Semester Then begin
+            //             StudentMasterCS.Reset();
+            //             StudentMasterCS.SETRANGE(StudentMasterCS."No.", StudentPromotionLine."Student No.");
+            //             IF StudentMasterCS.FINDFIRST() THEN BEGIN
+            //                 StudentMasterCS.VALIDATE("Remaining Academic SAP", (StudentMasterCS."Remaining Academic SAP" - 1));
+            //                 StudentMasterCS.VALIDATE("Pending For Registration", TRUE);
+            //                 StudentMasterCS.Modify();
+            //             END;
+            //             StudentPromotionLine."Promoted Semester" := StudentMasterCS.Semester;
+            //             StudentPromotionLine."Promoted Year" := StudentMasterCS.Year;
+            //             StudentPromotionLine."Promoted  Academic Year" := StudentPromotionHeader."Next Academic Year";
+            //             StudentPromotionLine."Type Of Repeat" := StudentPromotionLine."Type Of Repeat"::Semester;
+            //             StudentPromotionLine."Student Promoted" := TRUE;
+            //             StudentPromotionLine."Repeat Application No" := OptOut."Application No.";
+            //             StudentPromotionLine.Modify();
+
+            //             OptOut."Application Used" := true;
+            //             OptOut.Modify();
+
+            //     MainStudentSubject.Reset();
+            //     MainStudentSubject.SetRange("Student No.", StudentMasterCS."No.");
+            //     MainStudentSubject.SetRange(Semester, StudentMasterCS.Semester);
+            //     MainStudentSubject.SetRange("Academic Year", StudentMasterCS."Academic Year");
+            //     MainStudentSubject.SetRange("Global Dimension 1 Code", StudentMasterCS."Global Dimension 1 Code");
+            //     IF MainStudentSubject.FindSet() then begin
+            //         MainStudentSubject.ModifyAll(MainStudentSubject.Publish, false);
+            //     end;
+
+            // end;
+            //             IF OptOut."Type Of Repeat" = OptOut."Type Of Repeat"::Year Then begin
+            //                 StudentMasterCS.Reset();
+            //                 StudentMasterCS.SETRANGE(StudentMasterCS."No.", StudentPromotionLine."Student No.");
+            //                 IF StudentMasterCS.FINDFIRST() THEN BEGIN
+            //                     StudentMasterCS.VALIDATE(Semester, PreviousSemester);
+            //                     StudentMasterCS.VALIDATE("Remaining Academic SAP", (StudentMasterCS."Remaining Academic SAP" + 1));
+            //                     StudentMasterCS.VALIDATE(Year, PreviousYear);
+            //                     StudentMasterCS.VALIDATE("Academic Year", StudentPromotionHeader."Next Academic Year");
+            //                     StudentMasterCS.VALIDATE("Pending For Registration", TRUE);
+            //                     StudentMasterCS.Modify();
+            //                 END;
+            //                 StudentPromotionLine."Promoted Semester" := PreviousSemester;
+            //                 StudentPromotionLine."Promoted Year" := PreviousYear;
+            //                 StudentPromotionLine."Promoted  Academic Year" := StudentPromotionHeader."Next Academic Year";
+            //                 StudentPromotionLine."Type Of Repeat" := StudentPromotionLine."Type Of Repeat"::Year;
+            //                 StudentPromotionLine."Student Promoted" := TRUE;
+            //                 StudentPromotionLine."Repeat Application No" := OptOut."Application No.";
+            //                 StudentPromotionLine.Modify();
+
+            //                 OptOut."Application Used" := true;
+            //                 OptOut.Modify();
+
+            //             end;
+            //                 end;
+            // end;
+            // IF StudentPromotionLine."Earnd Percentage" < MinimumPer then begin
+            //     StudentMasterCS.Reset();
+            //     StudentMasterCS.SETRANGE(StudentMasterCS."No.", StudentPromotionLine."Student No.");
+            //     IF StudentMasterCS.FINDFIRST() THEN BEGIN
+            //         StudentMasterCS.VALIDATE("Remaining Academic SAP", (StudentMasterCS."Remaining Academic SAP" - 1));
+            //         StudentMasterCS.VALIDATE("Student Status", StudentMasterCS."Student Status"::Inactive);
+            //         StudentMasterCS.VALIDATE("Pending For Registration", TRUE);
+            //         StudentMasterCS.Modify();
+            //     END;
+            //     StudentPromotionLine."Student Promoted" := TRUE;
+            //     StudentPromotionLine.Modify();
+            // end;
+            Until StudentPromotionLine.Next() = 0;
+    end;
+
+    procedure TempStudentPromotion(StudNo: Code[20]): Boolean
+    var
+        StudStatus: Record "Student Master-CS";
+        StudStatusMgt: Codeunit "Student Status Mangement";
+    begin
+
+        // StudStatusMgt.StudentSemPromotion()
+    end;
+}

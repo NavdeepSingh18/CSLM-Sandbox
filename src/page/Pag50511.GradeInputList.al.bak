@@ -1,0 +1,68 @@
+page 50511 "Grade Input List"
+{
+    PageType = List;
+    ApplicationArea = All;
+    UsageCategory = Lists;
+    SourceTable = "Grade Input";
+    SourceTableView = sorting("Global Dimension 1 Code", "Academic Year", "Admitted Year", Semester, "Type of Input", "Input Sequence");
+    DelayedInsert = true;
+    layout
+    {
+        area(Content)
+        {
+            repeater(Entry)
+            {
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                }
+                field("Admitted Year"; "Admitted Year")
+                {
+                    ApplicationArea = All;
+                }
+                field(Semester; Semester)
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Code"; "Exam Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Description"; "Exam Description")
+                {
+                    ApplicationArea = All;
+                }
+                // field("Type of Input"; "Type of Input")
+                // {
+                //     ApplicationArea = All;
+                //     trigger OnValidate()
+                //     var
+                //         GradeInput: Record "Grade Input";
+                //     begin
+                //         GradeInput.Reset();
+                //         GradeInput.SetRange("Global Dimension 1 Code", "Global Dimension 1 Code");
+                //         GradeInput.SetRange("Academic Year", "Academic Year");
+                //         GradeInput.SetRange("Admitted Year", "Admitted Year");
+                //         GradeInput.SetRange(Semester, Semester);
+                //         GradeInput.SetRange("Exam Code", "Exam Code");
+                //         GradeInput.SetRange("Type of Input", "Type of Input");
+                //         if GradeInput.FindFirst() then
+                //             "Input Sequence" := GradeInput."Input Sequence" + 1;
+                //     end;
+                // }
+                // field("Input Sequence"; "Input Sequence")
+                // {
+                //     ApplicationArea = All;
+                // }
+                field(Points; Points)
+                {
+                    ApplicationArea = All;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,468 @@
+page 50106 "Schedule(Exam) Hdr-CS"
+{
+    // version V.001-CS
+
+    // Sr.No  Emp.ID      Date      Trigger                                         Remarks
+    // ---------------------------------------------------------------------------------------------------------------------
+    // 01.   CSPL-00174  14-04-19   OnAfterGetRecord()                              Code added for Document Validation.
+    // 02.   CSPL-00174  14-04-19   OnNewRecord()                                   Code added for Document Validation
+    // 03.   CSPL-00174  14-04-19   OnDeleteRecord()                                Code added for Showing Error.
+    // 04.   CSPL-00174  14-04-19   No. - OnAssistEdit()                            Code added for No.Series Generation.
+    // 05.   CSPL-00174  14-04-19   Generate Exam Schedule - OnAction()             Code added for Exam Schedule Generation.
+    // 06.   CSPL-00174  14-04-19   Calculate Student Attendance - OnAction()       Code added for Calculate Students Attendance.
+    // 07.   CSPL-00174  14-04-19   Generate  External Exam Attendance  - OnAction()Code added for Generate Students External Exam Attendance.
+    // 08.   CSPL-00174  14-04-19   Generate  External Exam Details - OnAction()    Code added for Generate Students External Exam Details.
+    // 09.   CSPL-00174  14-04-19   Export/Import Exam Schedule - OnAction()        Code added for Export/Import Exam Schedule .
+    // 10.   CSPL-00174  14-04-19   Hall Allotment - OnAction()                     Code added for Validation with Hall Allotment.
+    // 11.   CSPL-00174  14-04-19   Release - OnAction()                            Code added for Modify Record.
+    // 12.   CSPL-00174  14-04-19   Reopen - OnAction()                             Code added for Modify Record.
+
+    Caption = 'Schedule(Exam) Hdr';
+    DeleteAllowed = false;
+    PageType = Document;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "Exam Time Table Head-CS";
+
+    layout
+    {
+        area(content)
+        {
+            group(General)
+            {
+                Caption = 'General';
+                field("No."; "No.")
+                {
+                    ApplicationArea = All;
+                    Editable = NoChangeAllowed;
+
+                    trigger OnAssistEdit()
+                    begin
+                        //Code added for No.Series Generation::CSPL-00174::140419: Start
+                        IF AssistEdit(xRec) THEN
+                            CurrPage.Update();
+                        //Code added for No.Series Generation::CSPL-00174::140419: End
+                    end;
+                }
+                field("Exam Type"; "Exam Type")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Exam Method"; "Exam Method")
+                {
+                    ApplicationArea = All;
+                    Editable = NoChangeAllowed;
+                    Visible = false;
+                }
+                field("Subject Classification"; "Subject Classification")
+                {
+                    ApplicationArea = All;
+                    Editable = NoChangeAllowed;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Exam Classification"; "Exam Classification")
+                {
+                    ApplicationArea = All;
+                }
+                field(Term; Term)
+                {
+                    ApplicationArea = All;
+                }
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                    //Editable = NoChangeAllowed; 
+                    Editable = false;
+                }
+                field("Global Dimension 2 Code"; "Global Dimension 2 Code")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field(Status; Status)
+                {
+                    ApplicationArea = All;
+                    //Editable = NoChangeAllowed; 
+                    Editable = false;
+                }
+            }
+            part("Exam Schdule Line - COL"; 50081)
+            {
+                Editable = NoChangeAllowed;
+                ApplicationArea = All;
+                SubPageLink = "Document No." = FIELD("No.");
+            }
+        }
+    }
+
+    actions
+    {
+        area(navigation)
+        {
+            group("E&xam Schedule")
+            {
+                Caption = 'E&xam Schedule';
+                action("&List")
+                {
+                    Caption = '&List';
+                    RunObject = Page 50083;
+                    ShortCutKey = 'Shift+Ctrl+L';
+                    ApplicationArea = All;
+                }
+                action("Generate Exam Schedule")
+                {
+                    Image = CreateMovement;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    Visible = false;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    var
+                        ExamScheduleLineCOL3: Record "Exam Time Table Line-CS";
+                    begin
+                        //Code added for Exam Schedule Generate::CSPL-00174::140419: Start
+                        IF UserSetup.GET(UserId()) THEN
+                            IF UserSetup."Student Subject Permission" THEN BEGIN
+                                TESTFIELD("Global Dimension 1 Code");
+                                TESTFIELD("Exam Classification");
+                                TESTFIELD("Exam Type");
+                                TESTFIELD("Academic Year");
+                                TESTFIELD("No.");
+                                TESTFIELD("Subject Classification");
+                                IF Status = Status::Open THEN BEGIN
+                                    IF NOT CONFIRM(Text0001Lbl) THEN
+                                        EXIT;
+                                    ExamScheduleLineCOL3.Reset();
+                                    ExamScheduleLineCOL3.SETRANGE("Document No.", "No.");
+                                    IF NOT ExamScheduleLineCOL3.FINDFIRST() THEN BEGIN
+                                        IF "Exam Classification" = 'REGULAR' THEN
+                                            ScheduleExamGenCS.ExamScheduleCS("No.", "Global Dimension 1 Code", "Subject Classification", "Academic Year");
+
+                                        IF "Exam Classification" = 'MAKE-UP' THEN
+                                            ScheduleExamGenCS.ExamScheduleCS("No.", "Global Dimension 1 Code", "Subject Classification", "Academic Year");
+
+                                        IF "Exam Classification" = 'SPECIAL' THEN
+                                            ScheduleExamGenCS.MakeupExamScheduleCS("No.", "Global Dimension 1 Code", "Subject Classification", "Academic Year");
+
+                                        IF "Exam Classification" = 'WINTER' THEN
+                                            ScheduleExamGenCS.WinterExamScheduleCS("No.", "Global Dimension 1 Code", "Academic Year", "Subject Classification");
+
+                                        IF "Exam Classification" = 'SUMMER' THEN
+                                            ScheduleExamGenCS.SummerExamScheduleCS("No.", "Global Dimension 1 Code", "Subject Classification", "Academic Year");
+                                    END ELSE
+                                        ERROR('Delete Exam schedule line!!!');
+                                END ELSE
+                                    ERROR('Document Is Released. You Cannot Generate Exam Shedule !!');
+                            END;
+                        //Code added for Exam Schedule Generate::CSPL-00174::140419: End
+                    end;
+                }
+                action("Calculate Student Attendance")
+                {
+                    Image = Calculate;
+                    Promoted = true;
+                    Visible = false;
+                    PromotedOnly = true;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    begin
+                        //Code added for Calculate Students Attendance::CSPL-00174::140419: Start
+                        IF UserSetup.GET(UserId()) THEN
+                            IF UserSetup."Student Subject Permission" THEN
+                                IF NOT CONFIRM(Text_10004Lbl, FALSE) THEN
+                                    EXIT
+                                ELSE
+                                    IF Status = Status::Released THEN
+                                        StudentSubOldRecCS.CalculateAttendanceForExamWithAddCredit()
+                                    ELSE
+                                        ERROR('Exam Schedule Should Be Released !!!');
+                        //Code added for Calculate Students Attendance::CSPL-00174::140419: End
+                    end;
+                }
+                action("Generate  External Exam Attendance ")
+                {
+                    Caption = 'Generate  External Exam Attendance';
+                    Image = GetEntries;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    Visible = false;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    begin
+                        //Code added for Generate Students External Exam Attendance ::CSPL-00174::140419: Start
+                        IF UserSetup.GET(UserId()) THEN
+                            IF UserSetup."Student Subject Permission" THEN
+                                IF NOT CONFIRM(Text0002Lbl) THEN
+                                    EXIT;
+                        IF Status = Status::Released THEN BEGIN
+                            EducationSetupCS.Reset();
+                            EducationSetupCS.SETRANGE("Global Dimension 1 Code", "Global Dimension 1 Code");
+                            IF EducationSetupCS.FINDFIRST() THEN
+                                IF EducationSetupCS."Students Attendance Updated" <> TRUE THEN
+                                    ERROR('Students Attendance % Not Updated on Student Subjects.Please Click On Calculate Student Attendance Button !!!');
+
+                            ScheduleExamGenCS.CreateExtExamAttlistCS("No.", "Exam Type", Date);
+                        END ELSE
+                            ERROR('Status Should Be Released!!');
+
+
+                        //Code added for Generate Students External Exam Attendance ::CSPL-00174::140419: End
+                    end;
+                }
+                action("Generate  External Exam Details")
+                {
+                    Image = CalculateLines;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    Visible = false;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    begin
+                        //Code added for Generate Students External Exam Details ::CSPL-00174::140419: Start
+                        IF UserSetup.GET(UserId()) THEN
+                            IF UserSetup."Student Subject Permission" THEN begin
+                                ExternalAttendanceHeaderCS.Reset();
+                                ExternalAttendanceHeaderCS.SETRANGE("Exam Schedule No.", "No.");
+                                IF NOT ExternalAttendanceHeaderCS.FINDFIRST() THEN
+                                    ERROR(Text_10003Lbl);
+                                IF NOT CONFIRM(Text_10001Lbl) THEN
+                                    EXIT;
+                                IF Status = Status::Released THEN
+                                    EventsOfExaminationCS.CSCreateExternalExamDetails("Global Dimension 1 Code", "No.", "Exam Classification")
+                                ELSE
+                                    ERROR('Exam Schedule Should Be Released!!');
+                                MESSAGE('Done');
+                            end;
+                        //Code added for Generate Students External Exam Details ::CSPL-00174::140419: End
+                    end;
+                }
+
+                action("Generate External Exam Schedule")
+                {
+                    Image = CalculateLines;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    Var
+                        ExamScheduleLine: Record "Exam Time Table Line-CS";
+                    begin
+                        ExamScheduleLine.Reset();
+                        ExamScheduleLine.SetRange("Document No.", "No.");
+                        IF NOT ExamScheduleLine.FindFirst() then begin
+                            IF UserSetup.GET(UserId()) THEN
+                                IF UserSetup."Student Subject Permission" THEN begin
+                                    IF CONFIRM(Text_100002Lbl, true, "No.") THEN
+                                        ExaminationMgmt.GenerateExternalExamSchedule("No.");
+                                end else
+                                    Error('You do not have a permission');
+                        end Else
+                            ERROR('External Exam Schedule Already Generated.');
+                    End;
+                }
+
+
+                action("Generate External Exam")
+                {
+                    Image = CalculateLines;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    begin
+                        IF Status = Status::Released THEN begin
+                            IF UserSetup.GET(UserId()) THEN
+                                IF UserSetup."Student Subject Permission" THEN begin
+                                    IF CONFIRM(Text_100001Lbl, true, "No.") THEN begin
+                                        ExaminationMgmt.CreateExternalExam("Global Dimension 1 Code", "No.", "Exam Classification", "Exam Type");
+                                        Message('External Exam has been Generated.');
+                                    end;
+                                end else
+                                    Error('You do not have a permission');
+                        End ELSE
+                            ERROR('Exam Schedule Should Be Released!!');
+                    End;
+                }
+                action("Export/Import Exam Schedule")
+                {
+                    Image = ImportExcel;
+                    Promoted = true;
+                    Visible = false;
+                    PromotedOnly = true;
+                    PromotedIsBig = true;
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    var
+                        ExamScheduleLineCOL: Record "Exam Time Table Line-CS";
+                        ImportExamSlot: XMLport "Import Exam SlotCS";
+                    begin
+                        //Code added for Export/Import Exam Schedule::CSPL-00174::140419: Start
+                        CLEAR(ImportExamSlot);
+                        ExamScheduleLineCOL.Reset();
+                        ExamScheduleLineCOL.SETRANGE("Document No.", "No.");
+                        IF ExamTimeTableHeadCS.FINDFIRST() THEN
+                            XMLPORT.RUN(50053, TRUE, FALSE, ExamScheduleLineCOL);
+                        CurrPage.Update();
+                        //Code added for Export/Import Exam Schedule::CSPL-00174::140419: End
+                    end;
+                }
+            }
+            group("F&unction")
+            {
+                Caption = 'F&unction';
+                action("Hall Allotment")
+                {
+                    Caption = 'Hall Allotment';
+                    Promoted = true;
+                    PromotedOnly = true;
+
+                    Visible = false;
+                    ApplicationArea = All;
+                    Image = Allocate;
+                    trigger OnAction()
+                    var
+                        ExamSchedule: Codeunit "Schedule Exam -CS";
+                    begin
+                        //Code added for Validation with Hall Allotment::CSPL-00174::140419: Start
+                        TESTFIELD("Exam Type");
+                        TESTFIELD("Exam Classification");
+                        ExamSchedule.AdmitCrdAllotmentGenration("No.");
+                        //Code added for Validation with Hall Allotment::CSPL-00174::140419: End
+                    end;
+                }
+                action(Release)
+                {
+                    Image = ReleaseDoc;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    begin
+                        //Code added for Modify Record::CSPL-00174::140419: Start
+                        TESTFIELD("No.");
+                        TESTFIELD("Exam Classification");
+                        TESTFIELD("Exam Type");
+                        IF Status = Status::Released THEN
+                            ERROR('Already Released!!');
+                        ScheduleExamGenCS.ExamScheduleReleasedCS("No.");
+                        NoChangeAllowed := TRUE;
+                        //Code added for Modify Record::CSPL-00174::140419: End
+                    end;
+                }
+                action("Re-Open")
+                {
+                    Image = ReOpen;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    begin
+                        //Code added for Modify Record::CSPL-00174::140419: Start
+                        ScheduleExamGenCS.ExamScheduleReopenCS("No.");
+                        //Code added for Modify Record::CSPL-00174::140419: End
+                    end;
+                }
+                action("Export Schedule SLcM To NBME")
+                {
+                    Image = Allocate;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    begin
+                        IF Confirm(Text_10004Lbl, true, "No.") then begin
+                            ExternalExamLine.Reset();
+                            ExternalExamLine.SetRange("Exam Schedule No.", "No.");
+                            If ExternalExamLine.FindFirst() then
+                                Report.Run(50167, true, true, ExternalExamLine);
+                        end;
+                    end;
+                }
+                action("External Exam List")
+                {
+                    Image = CalculateLines;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    var
+                        ExternalExamHeader: Record "External Exam Header-CS";
+                        ExternalExamList: Page "External Student List-CS";
+                    begin
+                        ExternalExamHeader.Reset();
+                        ExternalExamHeader.SetRange("Exam Schedule Code", "No.");
+                        IF ExternalExamHeader.FindFirst() then begin
+                            ExternalExamList.SetTableView(ExternalExamHeader);
+                            ExternalExamList.Run();
+                        end;
+                    End;
+                }
+            }
+        }
+    }
+
+    trigger OnAfterGetRecord()
+    begin
+        //Code added for Document validation::CSPL-00174::140419: Start
+        EventsOfExaminationCS.CSRestrictDocumentAfterRelease(Status, NoChangeAllowed);
+        //Code added for Document validation::CSPL-00174::140419: End
+    end;
+
+    trigger OnDeleteRecord(): Boolean
+    begin
+        //Code added for Showing Error::CSPL-00174::140419: Start
+        IF Status = Rec.Status::Released THEN
+            ERROR('You Can not Delete this schedule');
+        //Code added for Showing Error::CSPL-00174::140419: End
+    end;
+
+    trigger OnNewRecord(BelowxRec: Boolean)
+    begin
+        //Code added for Document validation::CSPL-00174::140419: Start
+        "Exam Type" := "Exam Type"::External;
+        EventsOfExaminationCS.CSRestrictDocumentAfterRelease(Status, NoChangeAllowed);
+        //Code added for Document validation::CSPL-00174::140419: End
+    end;
+
+    var
+        ExamTimeTableHeadCS: Record "Exam Time Table Head-CS";
+        ExternalAttendanceHeaderCS: Record "External Attendance Header-CS";
+        UserSetup: Record "User Setup";
+        EducationSetupCS: Record "Education Setup-CS";
+        ExternalExamLine: Record "External Exam Line-CS";
+        ExaminationMgmt: Codeunit "Examination Management";
+        StudentSubOldRecCS: Codeunit "Student Sub. Old Rec-CS";
+        ScheduleExamGenCS: Codeunit "Schedule Exam Gen-CS";
+        EventsOfExaminationCS: Codeunit "Events Of Examination-CS";
+        NoChangeAllowed: Boolean;
+        Text0001Lbl: Label 'Do you want generate exam schedule?';
+
+
+        Text0002Lbl: Label 'Do you want generate the Student External Exam Attendance ?';
+
+        Text_10001Lbl: Label 'Do You Want To Generate External Exam Details ?';
+        Text_10003Lbl: Label 'Student External Attendance No Generated. Generate Student External Attendance First !! ';
+        Text_10004Lbl: Label 'Do You Want To Calculate Students Attendance ?';
+        Text_100001Lbl: Label 'Do You Want To Generate External Exam for Schedule No. %1 ?';
+        Text_100002Lbl: Label 'Do You Want To Generate External Exam Schedule No. %1 ?';
+
+
+    [IntegrationEvent(false, false)]
+    local procedure CallExternalExaminationEventforStudent(ExternalAttendanceHeaderCS: Record "External Attendance Header-CS")
+    begin
+    end;
+}

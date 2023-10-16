@@ -1,0 +1,652 @@
+table 50289 "Exam Time Table Line-CS"
+{
+    // version V.001-CS
+
+    // Sr.No   Emp.ID      Date            Trigger                                     Remarks
+    // -----------------------------------------------------------------------------------------------
+    // 01    CSPL-00114   04/04/2019       OnInsert()                                 Get line Values from header code added
+    // 02    CSPL-00114   04/04/2019       OnModify()                                 Code added for any record Change then Updated fields update
+    // 03    CSPL-00114   04/04/2019       Course Code - OnValidate()                 Code added for Course master Related values:
+    // 04    CSPL-00114   04/04/2019       Subject Code- OnValidate()                 Code added for Subject Name & ValidationCheck Function
+    // 05    CSPL-00114   04/04/2019       Academic Year - OnValidate()               Code added for ValidationCheck Function
+    // 06    CSPL-00114   04/04/2019       Exam Shot - OnValidate()                   Code added for any record Change then Updated fields update
+    // 03    CSPL-00114   04/04/2019       Exam Date - OnValidate()                   Code added for ValidationCheck Function
+    // 04    CSPL-00114   04/04/2019       Exam Classification - OnValidate()         Code added for ValidationCheck Function
+    // 05    CSPL-00114   04/04/2019       Academic Year - OnValidate()               Code added for ValidationCheck Function
+    // 04    CSPL-00114   04/04/2019       Exam Slot New - OnValidate()               Code added for Start & End Time Field and Validation Check Function
+    // 05    CSPL-00114   04/04/2019       ValidationCheckCS() - Fucntion             Use for Exam Schedule Generated Check
+
+    Caption = 'Exam Time Table Line-CS';
+    DrillDownPageID = "Exam Sch. Detail-CS";
+    LookupPageID = "Exam Sch. Detail-CS";
+
+    fields
+    {
+        field(1; "Document No."; Code[20])
+        {
+            Caption = 'Document No.';
+            DataClassification = CustomerContent;
+        }
+        field(2; "Course Code"; Code[20])
+        {
+            Caption = 'Course Code';
+            DataClassification = CustomerContent;
+            TableRelation = "Course Master-CS";
+
+            trigger OnValidate()
+            var
+                CourseMasterCS: Record "Course master-CS";
+            begin
+                //Code added for Course master Related values::CSPL-00114::04042019: Start
+                CourseMasterCS.Reset();
+                CourseMasterCS.SETRANGE(Code, "Course Code");
+                IF CourseMasterCS.FINDFIRST() THEN BEGIN
+                    "Global Dimension 1 Code" := CourseMasterCS."Global Dimension 1 Code";
+                    "Global Dimension 2 Code" := CourseMasterCS."Global Dimension 2 Code";
+                END;
+                //Code added for Course master Related values::CSPL-00114::04042019: End
+            end;
+        }
+        field(3; "Semester Code"; Code[10])
+        {
+            Caption = 'Semester Code';
+            DataClassification = CustomerContent;
+            TableRelation = "Semester Master-CS";
+        }
+        field(4; "Subject Code"; Code[20])
+        {
+            Caption = 'Subject Code';
+            DataClassification = CustomerContent;
+            trigger OnValidate()
+            begin
+                TestField("Exam No.", '');
+                if Rec."Subject Code" <> '' then begin
+                    Error('Use Lookup to select the Subject Code');
+                End ELSE begin
+                    "Subject Code" := '';
+                    "Subject Name" := '';
+                    "Subject Group" := '';
+                    "Subject Type" := '';
+                    "Subject Class" := '';
+                    "Course Code" := '';
+                    "Program" := '';
+                    "Semester Code" := '';
+                    Year := '';
+                    "Examiner Type" := "Examiner Type"::" ";
+                    "Academic Year" := '';
+                    "Exam Classification" := '';
+                    "Global Dimension 1 Code" := '';
+                end;
+            end;
+        }
+        field(5; "Subject Type"; Code[20])
+        {
+            Caption = 'Subject Type';
+            DataClassification = CustomerContent;
+            TableRelation = "Subject Type-CS";
+        }
+        field(6; "Hall Code"; Code[20])
+        {
+            Caption = 'Hall Code';
+            DataClassification = CustomerContent;
+            TableRelation = "Confrance Hall-CS";
+        }
+        field(7; "No of Students"; Integer)
+        {
+            Caption = 'No of Students';
+            DataClassification = CustomerContent;
+        }
+        field(8; "Examiner Type"; Option)
+        {
+            Caption = 'Examiner Type';
+            DataClassification = CustomerContent;
+            OptionCaption = ' ,Internal,External';
+            OptionMembers = " ",Internal,External;
+        }
+        field(9; "Examiner Code"; Code[20])
+        {
+            Caption = 'Examiner Code';
+            DataClassification = CustomerContent;
+            TableRelation = IF ("Examiner Type" = FILTER(Internal)) Employee
+            ELSE
+            IF ("Examiner Type" = FILTER(External)) "Examiner-CS";
+        }
+        field(10; "Line No."; Integer)
+        {
+            Caption = 'Line No.';
+            DataClassification = CustomerContent;
+        }
+        field(11; "Academic Year"; Code[20])
+        {
+            Caption = 'Academic Year';
+            DataClassification = CustomerContent;
+            TableRelation = "Academic Year Master-CS";
+
+            trigger OnValidate()
+            begin
+                //Code added for ValidationCheck Function::CSPL-00114::04042019: Start
+                ValidationCheckCS();
+                //Code added for ValidationCheck Function::CSPL-00114::04042019: End
+            end;
+        }
+        field(12; "Start Time"; Time)
+        {
+            Caption = 'Start Time';
+            DataClassification = CustomerContent;
+            Editable = false;
+        }
+        field(13; "End Time"; Time)
+        {
+            Caption = 'End Time';
+            DataClassification = CustomerContent;
+            Editable = false;
+        }
+        field(14; "Exam Slot"; Code[20])
+        {
+            Caption = 'Exam Slot';
+            DataClassification = CustomerContent;
+            TableRelation = "Examination Time Slot-CS";
+
+            trigger OnValidate()
+            begin
+                //Code added for Start & End Time Field::CSPL-00114::04042019: Start
+                ExaminationTimeSlotCS.Reset();
+                ExaminationTimeSlotCS.SETRANGE(ExaminationTimeSlotCS.Code, "Exam Slot");
+                IF ExaminationTimeSlotCS.FINDFIRST() THEN BEGIN
+                    "Start Time" := ExaminationTimeSlotCS."From Time";
+                    "End Time" := ExaminationTimeSlotCS."To Time";
+                END ELSE BEGIN
+                    "Start Time" := 0T;
+                    "End Time" := 0T;
+                END;
+                ExamScheduleUpdate();
+                //Code added for Start & End Time Field::CSPL-00114::04042019: End
+            END;
+        }
+        field(15; "Exam Date"; Date)
+        {
+            Caption = 'Exam Date';
+            DataClassification = CustomerContent;
+            trigger OnValidate()
+            begin
+                TestField("Exam No.", '');
+                //Code added for ValidationCheck Function::CSPL-00114::04042019: Start
+                IF "Exam Date" <> 0D Then begin
+                    IF "Exam Date" <= Today() then
+                        Error('Exam date must be greater then today');
+                end;
+                ValidationCheckCS();
+                ExamScheduleUpdate();
+                //Code added for ValidationCheck Function::CSPL-00114::04042019: End
+            end;
+        }
+        field(16; "Exam Classification"; Code[20])
+        {
+
+            Caption = 'Exam Classsification';
+            DataClassification = CustomerContent;
+            trigger OnValidate()
+            begin
+                //Code added for ValidationCheck Function::CSPL-00114::04042019: Start
+                ValidationCheckCS()
+                //Code added for ValidationCheck Function::CSPL-00114::04042019: End
+            end;
+        }
+        field(50001; "Map with Internal Stud"; Boolean)
+        {
+            Caption = 'Map with Internal Stud';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(50002; "Global Dimension 2 Code"; Code[20])
+        {
+            CaptionClass = '1,1,2';
+            Caption = 'Global Dimension 2 Code';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            TableRelation = "Dimension Value".Code WHERE("Global Dimension No." = CONST(2));
+        }
+        field(50003; "Global Dimension 1 Code"; Code[20])
+        {
+            CaptionClass = '1,1,1';
+            Caption = 'Global Dimension 1 Code';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            TableRelation = "Dimension Value".Code WHERE("Global Dimension No." = CONST(1));
+        }
+        field(50004; Updated; Boolean)
+        {
+            Caption = 'Updated';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(50005; "Program"; Code[20])
+        {
+            Caption = 'Program';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            TableRelation = "Graduation Master-CS".Code;
+        }
+        field(50006; "Student Group"; Code[20])
+        {
+            Caption = 'Student Group';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            TableRelation = "Group Master-CS".Code;
+            trigger OnValidate()
+            begin
+                TestField("Exam No.", '');
+            end;
+        }
+        field(50007; "Created By"; Code[50])
+        {
+            Caption = 'Created By"';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(50008; "Created On"; Date)
+        {
+            Caption = 'Created On';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(50009; "Updated By"; Code[50])
+        {
+            Caption = 'Updated By';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(50010; "Updated On"; Date)
+        {
+            Caption = 'Updated On';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(50011; "Subject Class"; Code[20])
+        {
+            Caption = 'Subject Class';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            TableRelation = "Subject Classification-CS".Code;
+        }
+        field(50012; Year; Code[20])
+        {
+            Caption = 'Year';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            TableRelation = "Year Master-CS".Code;
+        }
+        field(50013; "Type Of Course"; Option)
+        {
+            Caption = 'Type Of Course';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            OptionCaption = ' ,Semester,Year';
+            OptionMembers = " ",Semester,Year;
+        }
+        field(50014; "Subject Group"; Code[20])
+        {
+            Caption = 'Subject Group';
+            DataClassification = CustomerContent;
+            Editable = False;
+        }
+        field(50015; "Term"; Option)
+        {
+            Caption = 'Term';
+            DataClassification = CustomerContent;
+            OptionCaption = 'FALL,SPRING,SUMMER';
+            OptionMembers = FALL,SPRING,SUMMER;
+        }
+        field(50016; "Exam No."; Code[20])
+        {
+            Caption = 'Exam No.';
+            DataClassification = CustomerContent;
+            // trigger OnLookup()
+            // var
+            //     ExtExamHdr: Record "External Exam Header-CS";
+            //     IntExamHdr: Record "Internal Exam Header-CS";
+            // begin
+            //     if "Exam No." <> '' then begin
+            //         if "Examiner Type" = "Examiner Type"::External then begin
+            //             ExtExamHdr.Reset();
+            //             ExtExamHdr.SetRange("No.", "Exam No.");
+            //             IF PAGE.RUNMODAL(0, ExtExamHdr) = ACTION::LookupOK THEN;
+            //         end
+            //         else
+            //             if "Examiner Type" = "Examiner Type"::Internal then begin
+            //                 IntExamHdr.Reset();
+            //                 IntExamHdr.SetRange("No.", "Exam No.");
+            //                 IF PAGE.RUNMODAL(0, IntExamHdr) = ACTION::LookupOK THEN;
+            //             end;
+            //     end;
+            // end;
+        }
+        field(50017; "Batch"; Code[20])
+        {
+            Caption = 'Batch';
+            DataClassification = CustomerContent;
+            TableRelation = "Batch-CS";
+        }
+        field(50018; "Select To Generate"; Boolean)
+        {
+            Caption = 'Select To Generate';
+            DataClassification = CustomerContent;
+            trigger OnValidate()
+            begin
+                TestField("Exam No.", '');
+            end;
+        }
+
+
+        field(33048920; "User ID"; Code[50])
+        {
+            Caption = 'User ID';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(33048921; "Portal ID"; Code[20])
+        {
+            Caption = 'Portal ID';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(33048922; Status; Option)
+        {
+            Caption = 'Status';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            OptionMembers = Open,Released;
+        }
+        field(33048923; "Ext Exam Attendance No."; Code[20])
+        {
+            Caption = 'Ext Exam Attendance No.';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(33048924; "Last Modify Date"; DateTime)
+        {
+            Caption = 'Last Modify Date';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(33048925; "Subject Name"; Text[100])
+        {
+            Caption = 'Subject Name';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(33048926; "Exam Slot New"; Code[20])
+        {
+            Caption = 'Exam Slot New';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+            TableRelation = "Examination Time Slot-CS";
+
+            trigger OnValidate()
+            begin
+                TestField("Exam No.", '');
+                //Code added for Start & End Time Field and Validation Check Function::CSPL-00114::04042019: Start
+                ValidationCheckCS();
+
+                ExaminationTimeSlotCS.Reset();
+                ExaminationTimeSlotCS.SETRANGE(ExaminationTimeSlotCS.Code, "Exam Slot New");
+                IF ExaminationTimeSlotCS.FINDFIRST() THEN BEGIN
+                    "Start Time New" := ExaminationTimeSlotCS."From Time";
+                    "End Time New" := ExaminationTimeSlotCS."To Time";
+                END ELSE BEGIN
+                    "Start Time New" := 0T;
+                    "End Time New" := 0T;
+                END;
+                //Code added for Start & End Time Field and Validation Check Function::CSPL-00114::04042019: End
+            END;
+
+        }
+        field(33048927; "Start Time New"; Time)
+        {
+            Caption = 'Start Time New';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+        field(33048928; "End Time New"; Time)
+        {
+            Caption = 'End Time New';
+            DataClassification = CustomerContent;
+            Description = 'CS Field Added 04042019';
+        }
+    }
+
+    keys
+    {
+        key(Key1; "Document No.", "Line No.")
+        {
+        }
+        key(Key2; "Course Code")
+        {
+        }
+        key(Key3; "Exam Date", "Exam Slot New")
+        {
+        }
+    }
+
+    fieldgroups
+    {
+        fieldgroup(DropDown; "Course Code", "Semester Code", "Subject Code", "Subject Type", "Academic Year", "Exam Slot", "Exam Date")
+        {
+        }
+    }
+
+    trigger OnInsert()
+    begin
+
+        //Code added for Get line Values from header::CSPL-00114::04042019: Start
+        IF ExamTimeTableHeadCS.GET("Document No.") THEN BEGIN
+            "Examiner Type" := ExamTimeTableHeadCS."Exam Type";
+            "Academic Year" := ExamTimeTableHeadCS."Academic Year";
+            "Exam Classification" := ExamTimeTableHeadCS."Exam Classification";
+            "Global Dimension 1 Code" := ExamTimeTableHeadCS."Global Dimension 1 Code";
+            "Term" := ExamTimeTableHeadCS."Term";
+        END;
+        //Code added for Get line Values from header::CSPL-00114::04042019: End
+    end;
+
+    trigger OnModify()
+    begin
+        //Code added for any record Change then Updated fields update::CSPL-00114::04042019: Start
+        IF xRec.Updated = Updated THEN
+            Updated := TRUE;
+        "Updated By" := FORMAT(UserId());
+        "Updated On" := TODAY();
+        //Code added for any record Change then Updated fields update::CSPL-00114::04042019: End
+    end;
+
+    trigger OnDelete()
+    begin
+        TestField("Exam No.", '');
+        ExamTimeTableLine.Reset();
+        ExamTimeTableLine.SetRange("Document No.", "Document No.");
+        ExamTimeTableLine.SetRange("Subject Group", "Subject Code");
+        If ExamTimeTableLine.FindSet() then
+            ExamTimeTableLine.DeleteAll();
+    end;
+
+    var
+        ExamTimeTableHeadCS: Record "Exam Time Table Head-CS";
+        ExamTimeTableLine: Record "Exam Time Table Line-CS";
+        ExaminationTimeSlotCS: Record "Examination Time Slot-CS";
+        CourseSubjectLine: Record "Course Wise Subject Line-CS";
+        BatchMaster: Record "Batch-CS";
+
+    procedure ValidationCheckCS()
+    var
+        ExamTimeTableLineCS: Record "Exam Time Table Line-CS";
+        Text0001Lbl: Label 'Exam Schedule  Already Created For Subject "%1" !!!';
+    begin
+        //Code added for Exam Schedule Generated Check::CSPL-00114::04042019: Start
+        ExamTimeTableLineCS.Reset();
+        ExamTimeTableLineCS.SETRANGE("Document No.", "Document No.");
+        ExamTimeTableLineCS.SETRANGE("Subject Code", "Subject Code");
+        // ExamTimeTableLineCS.SETRANGE("Academic Year", "Academic Year");
+        // ExamTimeTableLineCS.SetRange("Course Code", "Course Code");
+        // ExamTimeTableLineCS.SETRANGE("Semester Code", "Semester Code");
+        // ExamTimeTableLineCS.SETRANGE("Exam Date", "Exam Date");
+        // ExamTimeTableLineCS.SETRANGE("Exam Slot New", "Exam Slot New");
+        // ExamTimeTableLineCS.SETRANGE("Exam Classification", "Exam Classification");
+        ExamTimeTableLineCS.SETRANGE("Student Group", "Student Group");
+        ExamTimeTableLineCS.SetFilter("Line No.", '<>%1', "Line No.");
+        IF ExamTimeTableLineCS.FINDFIRST() THEN
+            ERROR(Text0001Lbl, "Subject Code");
+
+        //Code added for Exam Schedule Generated Check::CSPL-00114::04042019: End
+    end;
+
+    procedure LineAutoFill(LineNo: Integer)
+    var
+        ExamScheduleLine: Record "Exam Time Table Line-CS";
+        ExamScheduleHead: Record "Exam Time Table Head-CS";
+        MainStudentSubject: Record "Main Student Subject-CS";
+    begin
+        ExamScheduleHead.Get("Document No.");
+        CourseSubjectLine.Reset();
+        CourseSubjectLine.SETRANGE("Academic Year", "Academic Year");
+        CourseSubjectLine.SETRANGE("Global Dimension 1 Code", "Global Dimension 1 Code");
+        CourseSubjectLine.SETRANGE("Course Code", "Course Code");
+        CourseSubjectLine.SETRANGE(Semester, "Semester Code");
+        CourseSubjectLine.SetRange("Subject Group", "Subject Code");
+        CourseSubjectLine.SetRange("Program", "Program");
+        IF CourseSubjectLine.FindSet() THEN
+            repeat
+                MainStudentSubject.Reset();
+                MainStudentSubject.SETRANGE("Academic Year", CourseSubjectLine."Academic Year");
+                MainStudentSubject.SETRANGE("Global Dimension 1 Code", CourseSubjectLine."Global Dimension 1 Code");
+                MainStudentSubject.SETRANGE("Course", CourseSubjectLine."Course Code");
+                MainStudentSubject.SETRANGE(Semester, CourseSubjectLine."Semester");
+                MainStudentSubject.SetRange("Subject Code", CourseSubjectLine."Subject Code");
+                MainStudentSubject.SetRange(Graduation, CourseSubjectLine."Program");
+                MainStudentSubject.SetRange(Publish, false);
+                MainStudentSubject.SetFilter(Batch, '<>%1', '');
+                If MainStudentSubject.FindFirst() then
+                    repeat
+                        IF StrPos(MainStudentSubject.Batch, CourseSubjectLine."Applicable Batch") <> 0 then
+                            Error('%1 Batch mapped on Student Subject for the Student No. %2 But not mapped on Course Subject', MainStudentSubject.Batch, MainStudentSubject."Student No.");
+                    Until MainStudentSubject.Next() = 0;
+
+                IF CourseSubjectLine."Applicable Batch" <> '' THEN BEGIN
+                    BatchMaster.RESET();
+                    BatchMaster.SetFilter("Code", CourseSubjectLine."Applicable Batch");
+                    BatchMaster.SETRANGE("Global Dimension 1 Code", CourseSubjectLine."Global Dimension 1 Code");
+                    IF BatchMaster.FINDSET() THEN
+                        REPEAT
+                            MainStudentSubject.Reset();
+                            MainStudentSubject.SETRANGE("Academic Year", CourseSubjectLine."Academic Year");
+                            MainStudentSubject.SETRANGE("Global Dimension 1 Code", CourseSubjectLine."Global Dimension 1 Code");
+                            MainStudentSubject.SETRANGE("Course", CourseSubjectLine."Course Code");
+                            MainStudentSubject.SETRANGE(Semester, CourseSubjectLine."Semester");
+                            MainStudentSubject.SetRange("Subject Code", CourseSubjectLine."Subject Code");
+                            MainStudentSubject.SetRange(Graduation, CourseSubjectLine."Program");
+                            MainStudentSubject.SetRange(Publish, false);
+                            MainStudentSubject.SetRange(Batch, BatchMaster.Code);
+                            If MainStudentSubject.FindFirst() then begin
+                                ExamScheduleLine.Init();
+                                ExamScheduleLine."Document No." := "Document No.";
+                                ExamScheduleLine."Line No." := LineNo + 10000;
+                                ExamScheduleLine."Subject Code" := CourseSubjectLine."Subject Code";
+                                ExamScheduleLine."Subject Name" := CourseSubjectLine.Description;
+                                ExamScheduleLine."Subject Group" := CourseSubjectLine."Subject Group";
+                                ExamScheduleLine."Subject Type" := CourseSubjectLine."Subject Type";
+                                ExamScheduleLine."Subject Class" := CourseSubjectLine."Subject Classification";
+                                ExamScheduleLine."Course Code" := CourseSubjectLine."Course Code";
+                                ExamScheduleLine."Program" := CourseSubjectLine."Program";
+                                ExamScheduleLine."Semester Code" := CourseSubjectLine.Semester;
+                                ExamScheduleLine.Year := CourseSubjectLine.Year;
+                                ExamScheduleLine.Batch := BatchMaster."Code";
+                                ExamScheduleLine."Examiner Type" := ExamScheduleHead."Exam Type";
+                                ExamScheduleLine."Academic Year" := ExamScheduleHead."Academic Year";
+                                ExamScheduleLine."Exam Classification" := ExamScheduleHead."Exam Classification";
+                                ExamScheduleLine."Global Dimension 1 Code" := ExamScheduleHead."Global Dimension 1 Code";
+                                ExamScheduleLine."Term" := ExamScheduleHead."Term";
+                                ExamScheduleLine.Insert(true);
+                                LineNo := ExamScheduleLine."Line No.";
+                            end;
+                        Until BatchMaster.Next() = 0;
+                End Else begin
+                    ExamScheduleLine.Init();
+                    ExamScheduleLine."Document No." := "Document No.";
+                    ExamScheduleLine."Line No." := LineNo + 10000;
+                    ExamScheduleLine."Subject Code" := CourseSubjectLine."Subject Code";
+                    ExamScheduleLine."Subject Name" := CourseSubjectLine.Description;
+                    ExamScheduleLine."Subject Group" := CourseSubjectLine."Subject Group";
+                    ExamScheduleLine."Subject Type" := CourseSubjectLine."Subject Type";
+                    ExamScheduleLine."Subject Class" := CourseSubjectLine."Subject Classification";
+                    ExamScheduleLine."Course Code" := CourseSubjectLine."Course Code";
+                    ExamScheduleLine."Program" := CourseSubjectLine."Program";
+                    ExamScheduleLine."Semester Code" := CourseSubjectLine.Semester;
+                    ExamScheduleLine.Year := CourseSubjectLine.Year;
+                    ExamScheduleLine.Batch := CourseSubjectLine."Applicable Batch";
+                    ExamScheduleLine."Examiner Type" := ExamScheduleHead."Exam Type";
+                    ExamScheduleLine."Academic Year" := ExamScheduleHead."Academic Year";
+                    ExamScheduleLine."Exam Classification" := ExamScheduleHead."Exam Classification";
+                    ExamScheduleLine."Global Dimension 1 Code" := ExamScheduleHead."Global Dimension 1 Code";
+                    ExamScheduleLine."Term" := ExamScheduleHead."Term";
+                    ExamScheduleLine.Insert(true);
+                    LineNo := ExamScheduleLine."Line No.";
+                end;
+            Until CourseSubjectLine.Next() = 0;
+    end;
+
+    procedure ExamScheduleUpdate()
+    var
+        InternalExamLine: Record "Internal Exam Line-CS";
+        ExternalExamLine: Record "External Exam Line-CS";
+    begin
+        IF "Examiner Type" = "Examiner Type"::"Internal" then begin
+
+            InternalExamLine.Reset();
+            InternalExamLine.SetRange("Exam Schedule No.", "Document No.");
+            InternalExamLine.SetRange("Subject Code", "Subject Code");
+            InternalExamLine.SetRange(Batch, Batch);
+            InternalExamLine.SetRange(Course, "Course Code");
+            InternalExamLine.SetRange(Semester, "Semester Code");
+            InternalExamLine.SetFilter("Marks Obtained", '<>%1', 0);
+            IF InternalExamLine.FindFirst() then
+                Error('Marks should be Zero');
+
+            InternalExamLine.Reset();
+            InternalExamLine.SetRange("Exam Schedule No.", "Document No.");
+            InternalExamLine.SetRange("Subject Code", "Subject Code");
+            InternalExamLine.SetRange(Batch, Batch);
+            InternalExamLine.SetRange(Course, "Course Code");
+            InternalExamLine.SetRange(Semester, "Semester Code");
+            IF InternalExamLine.FindSet() then begin
+                InternalExamLine.ModifyAll("Exam Date", "Exam Date");
+                InternalExamLine.ModifyAll("Exam Slot", "Exam Slot");
+                InternalExamLine.ModifyAll("Start Time", "Start Time");
+                InternalExamLine.ModifyAll("End Time", "End Time");
+            end;
+        end;
+        IF "Examiner Type" = "Examiner Type"::External then begin
+            ExternalExamLine.Reset();
+            ExternalExamLine.SetRange("Exam Schedule No.", "Document No.");
+            ExternalExamLine.SetRange("Subject Code", "Subject Code");
+            ExternalExamLine.SetRange(Batch, Batch);
+            ExternalExamLine.SetRange(Course, "Course Code");
+            ExternalExamLine.SetRange(Semester, "Semester Code");
+            ExternalExamLine.SetFilter("External Mark", '<>%1', 0);
+            IF ExternalExamLine.FindSet() then
+                Error('Marks should be Zero');
+
+            ExternalExamLine.Reset();
+            ExternalExamLine.SetRange("Exam Schedule No.", "Document No.");
+            ExternalExamLine.SetRange("Subject Code", "Subject Code");
+            ExternalExamLine.SetRange(Batch, Batch);
+            ExternalExamLine.SetRange(Course, "Course Code");
+            ExternalExamLine.SetRange(Semester, "Semester Code");
+            IF ExternalExamLine.FindSet() then begin
+                ExternalExamLine.ModifyAll("Exam Date", "Exam Date");
+                ExternalExamLine.ModifyAll("Exam Slot", "Exam Slot");
+                ExternalExamLine.ModifyAll("Start Time", "Start Time New");
+                ExternalExamLine.ModifyAll("End Time", "End Time New");
+            end;
+        end;
+    End;
+}
+

@@ -1,0 +1,131 @@
+page 50099 "Internal Student SubPage-CS"
+{
+    // version V.001-CS
+
+    AutoSplitKey = true;
+    Caption = 'Internal Examination SubPage';
+    DelayedInsert = true;
+    Editable = true;
+    PageType = ListPart;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "Internal Exam Line-CS";
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+
+                field("Student No."; "Student No.")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = false;
+                }
+                field("Enrollment No."; "Enrollment No.")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = false;
+                }
+                field("Student Name"; "Student Name")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = false;
+                }
+                field(Semester; Semester)
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = false;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = false;
+                }
+
+                field("Subject Code"; "Subject Code")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = false;
+                }
+
+                field("Obtained Internal Marks"; "Obtained Internal Marks")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = BoolEditable;
+                }
+                field("Maximum Internal  Marks"; "Maximum Internal  Marks")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = BoolEditable;
+                }
+                field("Obtained Weightage"; "Obtained Weightage")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = BoolEditable;
+                }
+                field("Maximum Weightage"; "Maximum Weightage")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = BoolEditable;
+                }
+                field("Percentage Obtained"; "Percentage Obtained")
+                {
+                    ApplicationArea = All;
+                    Style = Strong;
+                    StyleExpr = Emphasize;
+                    Editable = BoolEditable;
+                }
+
+                field("Exam Date"; "Exam Date")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
+                field("Marks Obtained"; "Marks Obtained")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+            }
+        }
+    }
+    var
+        StudentInternalHeader: Record "Internal Exam Header-CS";
+        Emphasize: Boolean;
+        BoolEditable: Boolean;
+
+    trigger OnAfterGetRecord()
+    begin
+        StudentInternalHeader.RESET();
+        StudentInternalHeader.SETRANGE("No.", "Document No.");
+        IF StudentInternalHeader.FINDFIRST() THEN begin
+            Emphasize := "Subject Code" = StudentInternalHeader."Subject Code";
+            BoolEditable := "Subject Code" <> StudentInternalHeader."Subject Code";
+        end;
+    end;
+
+}

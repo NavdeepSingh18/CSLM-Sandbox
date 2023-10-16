@@ -1,0 +1,163 @@
+page 50519 "Grade Calculation"
+{
+
+    Caption = 'Grade Calculation';
+    PageType = Card;
+    UsageCategory = None;
+    layout
+    {
+        area(content)
+        {
+            field("Academic Year"; AcademicYear)
+            {
+                Caption = 'Academic Year';
+                ApplicationArea = All;
+                TableRelation = "Academic Year Master-CS";
+            }
+
+            field("Semester"; SemesterCode)
+            {
+                Caption = 'Semester';
+                ApplicationArea = All;
+                TableRelation = "Semester Master-CS";
+            }
+            field("Exam Classification"; ExamClassification)
+            {
+                Caption = 'Exam Classification';
+                ApplicationArea = All;
+                TableRelation = "Examination Type Master-CS";
+            }
+            field("Institute Code"; GlobalDimension1)
+            {
+                Caption = 'Institute Code';
+                ApplicationArea = All;
+                TableRelation = "Dimension Value".Code WHERE("Global Dimension No." = CONST(1));
+            }
+
+            field("Semester Type"; SemesterType)
+            {
+                Caption = 'Semester Type';
+                ApplicationArea = All;
+                OptionCaption = 'FALLSEMESTER,SPRINGSEMESTER';
+            }
+
+        }
+    }
+    actions
+    {
+        area(Processing)
+        {
+            action("Grade Book Generate")
+            {
+                ApplicationArea = All;
+                Caption = 'Grade Book Generate';
+                Promoted = true;
+                Promotedonly = True;
+                PromotedCategory = Process;
+                PromotedIsBig = true;
+                Image = Allocations;
+                trigger OnAction()
+                begin
+                    InternalExamHeader.Reset();
+                    InternalExamHeader.SetRange("Academic year", AcademicYear);
+                    InternalExamHeader.SetRange(Semester, SemesterCode);
+                    InternalExamHeader.SetRange("Global Dimension 1 Code", GlobalDimension1);
+                    InternalExamHeader.SetRange(Term, SemesterType);
+                    InternalExamHeader.SetRange("Exam Classification", ExamClassification);
+                    InternalExamHeader.SetFilter(Status, '<>%1', InternalExamHeader.Status::Published);
+                    IF InternalExamHeader.FindFirst() then
+                        Error('All Internal Exam should be Publish');
+
+                    ExternalExamLine.Reset();
+                    ExternalExamLine.SetCurrentKey(ExternalExamLine."Student No.");
+                    ExternalExamLine.SetRange("Academic year", "AcademicYear");
+                    ExternalExamLine.SetRange(Semester, "SemesterCode");
+                    ExternalExamLine.SetRange("Global Dimension 1 Code", GlobalDimension1);
+                    ExternalExamLine.SetRange(Term, SemesterType);
+                    ExternalExamLine.SetRange("Exam Classification", ExamClassification);
+                    ExternalExamLine.SetFilter(Status, '<>%1', ExternalExamLine.Status::Published);
+                    IF ExternalExamLine.FindFirst() then
+                        Error('All External Exam should be Publish');
+
+
+                    EducationSetup.Reset();
+                    EducationSetup.SetRange("Global Dimension 1 Code", GlobalDimension1);
+                    If EducationSetup.FindFirst() then begin
+                        IF EducationSetup."Academic Year" <> AcademicYear then
+                            Error('Academic Year must be same to education setup Academic Year');
+                        IF EducationSetup."Even/Odd Semester" <> SemesterType then
+                            Error('Semester Type must be same to education setup Semester Type');
+                    end;
+
+                    SubjectCode := '';
+                    IF CONFIRM(TEXT0005Lbl, true) THEN begin
+                        InternalExamHeader.Reset();
+                        InternalExamHeader.SetRange("Academic year", AcademicYear);
+                        InternalExamHeader.SetRange(Semester, SemesterCode);
+                        InternalExamHeader.SetRange("Global Dimension 1 Code", GlobalDimension1);
+                        InternalExamHeader.SetRange(Term, SemesterType);
+                        InternalExamHeader.SetRange("Exam Classification", ExamClassification);
+                        InternalExamHeader.SetRange(Status, InternalExamHeader.Status::Published);
+                        IF InternalExamHeader.FindSet() then
+                            repeat
+                                If SubjectCode = '' then
+                                    SubjectCode := InternalExamHeader."Subject Code"
+                                else
+                                    SubjectCode := Format(SubjectCode + '|' + InternalExamHeader."Subject Code");
+                            Until InternalExamHeader.Next() = 0;
+
+                        ExternalExamLine.Reset();
+                        ExternalExamLine.SetCurrentKey(ExternalExamLine."Student No.");
+                        ExternalExamLine.SetRange("Academic year", "AcademicYear");
+                        ExternalExamLine.SetRange(Semester, "SemesterCode");
+                        ExternalExamLine.SetRange("Global Dimension 1 Code", GlobalDimension1);
+                        ExternalExamLine.SetRange(Term, SemesterType);
+                        ExternalExamLine.SetRange("Exam Classification", ExamClassification);
+                        ExternalExamLine.SetRange(Status, ExternalExamLine.Status::Published);
+                        if ExternalExamLine.FindSet() then
+                            repeat
+                                If StudentNum <> ExternalExamLine."Student No." then begin
+                                    ExaminationMagt.ExternalEarnedPoints(ExternalExamLine."Student No.", SemesterType, ExamClassification);
+                                    IF SubjectCode <> '' then
+                                        ExaminationMagt.InternalEarnedPoints(ExternalExamLine."Student No.", SubjectCode, SemesterType, ExamClassification);
+                                    ExaminationMagt.EndTotalAndBest(ExternalExamLine."Student No.", SemesterType, ExamClassification);
+                                end;
+                                StudentNum := ExternalExamLine."Student No.";
+                            until ExternalExamLine.Next() = 0;
+                        Message('Grade Book has been Generated');
+                        CurrPage.Close();
+                    end;
+                end;
+            }
+
+        }
+    }
+    trigger OnOpenPage()
+    begin
+        UserSetup.Get(UserId());
+        EducationSetup.Reset();
+        EducationSetup.SetRange("Global Dimension 1 Code", UserSetup."Global Dimension 1 Code");
+        If EducationSetup.FindFirst() then begin
+            AcademicYear := EducationSetup."Academic Year";
+            GlobalDimension1 := EducationSetup."Global Dimension 1 Code";
+            SemesterType := EducationSetup."Even/Odd Semester";
+        End;
+    end;
+
+    var
+        InternalExamHeader: Record "Internal Exam Header-CS";
+        ExternalExamLine: Record "External Exam Line-CS";
+        EducationSetup: Record "Education Setup-CS";
+        UserSetup: Record "User Setup";
+        ExaminationMagt: Codeunit "Examination Management";
+        AcademicYear: Code[20];
+        GlobalDimension1: Code[20];
+        SemesterCode: Code[20];
+        SemesterType: Option;
+        ExamClassification: Code[20];
+        StudentNum: Code[20];
+        SubjectCode: Code[1000];
+        TEXT0005Lbl: Label 'Do You Want To Generate Grade Book ?';
+
+
+}

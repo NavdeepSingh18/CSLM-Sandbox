@@ -1,0 +1,264 @@
+page 50515 "Internal Exam Schedule"
+{
+
+    Caption = 'Internal Exam Schedule';
+    PageType = Document;
+    UsageCategory = None;
+    SourceTable = "Exam Time Table Head-CS";
+
+    layout
+    {
+        area(content)
+        {
+            group(General)
+            {
+                Caption = 'General';
+                field("No."; "No.")
+                {
+                    ApplicationArea = All;
+                    Editable = Bool_Editable;
+                    trigger OnAssistEdit()
+                    begin
+                        IF AssistEdit(xRec) THEN
+                            CurrPage.Update();
+                    end;
+                }
+                field("Exam Type"; "Exam Type")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Subject Classification"; "Subject Classification")
+                {
+                    ApplicationArea = All;
+                    Editable = Bool_Editable;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Exam Classification"; "Exam Classification")
+                {
+                    ApplicationArea = All;
+                    Editable = Bool_Editable;
+                }
+                field(Term; Term)
+                {
+                    ApplicationArea = All;
+                    Editable = Bool_Editable;
+                }
+
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Global Dimension 2 Code"; "Global Dimension 2 Code")
+                {
+                    ApplicationArea = All;
+                    Editable = Bool_Editable;
+                    Visible = false;
+                }
+                field(Status; Status)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+            }
+            part("Internal Exam Schedule Subpage"; "Internal Exam Schedule Subpage")
+            {
+                ApplicationArea = All;
+                Editable = Bool_Editable;
+                SubPageLink = "Document No." = FIELD("No.");
+            }
+        }
+    }
+
+    actions
+    {
+        area(navigation)
+        {
+            action("Generate Internal Exam")
+            {
+                Image = CalculateLines;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    InternalExamHeaderCS.RESET();
+                    InternalExamHeaderCS.SETRANGE("Exam Schedule Code", "No.");
+                    IF Not InternalExamHeaderCS.FINDFIRST() THEN BEGIN
+                        IF Status = Status::Released THEN begin
+                            IF UserSetup.GET(UserId()) THEN
+                                IF UserSetup."Student Subject Permission" THEN begin
+                                    IF CONFIRM(Text_10001Lbl, true, "No.") THEN begin
+                                        ExaminationMgmt.CreateInternalExam("Global Dimension 1 Code", "No.", "Exam Classification", "Exam Type");
+                                        Message('Internal Exam has been Generated.')
+                                    end;
+
+                                end else
+                                    Error('You do not have a permission');
+                        End ELSE
+                            ERROR('Exam Schedule Should Be Released!!');
+                    end Else
+                        ERROR('Internal Exam Already Generated.');
+                End;
+            }
+
+            action(Release)
+            {
+                Image = ReleaseDoc;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    IF Status = Status::Released THEN
+                        ERROR('Already Released!!');
+                    IF Confirm(Text_10002Lbl, true, "No.") then begin
+                        TESTFIELD("No.");
+                        TESTFIELD("Exam Classification");
+                        TESTFIELD("Exam Type");
+                        TestField("Academic Year");
+                        TestField("Global Dimension 1 Code");
+
+                        ExamTimeTableLineCS.Reset();
+                        ExamTimeTableLineCS.SetRange("Document No.", "No.");
+                        if ExamTimeTableLineCS.FindSet() then begin
+                            repeat
+                                If ExamTimeTableLineCS."Exam Date" = 0D then begin
+                                    SubjectMaster.Reset();
+                                    SubjectMaster.SetRange(Code, ExamTimeTableLineCS."Subject Code");
+                                    SubjectMaster.SetRange(Examination, false);
+                                    IF SubjectMaster.FindFirst() then begin
+                                        ExamTimeTableLineCS.Status := ExamTimeTableLineCS.Status::Released;
+                                        ExamTimeTableLineCS.Modify();
+                                    end Else
+                                        Error('Exam Date should not be Blank for Subject Code %1.', ExamTimeTableLineCS."Subject Code");
+                                end Else begin
+                                    SubjectMaster.Reset();
+                                    SubjectMaster.SetRange(Code, ExamTimeTableLineCS."Subject Code");
+                                    SubjectMaster.SetRange(Examination, true);
+                                    IF SubjectMaster.FindFirst() then begin
+                                        ExamTimeTableLineCS.Status := ExamTimeTableLineCS.Status::Released;
+                                        ExamTimeTableLineCS.Modify();
+                                    end Else
+                                        Error('Exam Date must have a value for Subject Code %1.', ExamTimeTableLineCS."Subject Code");
+                                end;
+                            Until ExamTimeTableLineCS.Next() = 0;
+                            Status := Status::Released;
+                            Modify();
+                        end;
+                    end;
+                end;
+            }
+            action("Re-Open")
+            {
+                Image = ReOpen;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    IF Status = Status::Open THEN
+                        ERROR('Already Open!!')
+                    Else begin
+                        IF Confirm(Text_10003Lbl, true, "No.") then begin
+                            ExamTimeTableLineCS.Reset();
+                            ExamTimeTableLineCS.SetRange("Document No.", "No.");
+                            if ExamTimeTableLineCS.FindSet() then begin
+                                ExamTimeTableLineCS.ModifyAll(Status, Status::Open);
+                                Status := Status::Open;
+                                Modify();
+                            end;
+                        End;
+                    end;
+                end;
+            }
+            action("Export Schedule SLcM To ExamSoft")
+            {
+                Image = Allocate;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                ApplicationArea = All;
+                trigger OnAction()
+                begin
+                    IF Confirm(Text_10004Lbl, true, "No.") then begin
+                        InternalExamLineCS.Reset();
+                        InternalExamLineCS.SetRange("Exam Schedule No.", "No.");
+                        If InternalExamLineCS.FindFirst() then
+                            Report.Run(50166, true, true, InternalExamLineCS);
+                    end;
+                end;
+            }
+            action("Internal Exam List")
+            {
+                Image = CalculateLines;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                ApplicationArea = All;
+                trigger OnAction()
+                var
+                    InternalExamHeader: Record "Internal Exam Header-CS";
+                    InternalExamList: Page "Internal Student List-CS";
+                begin
+                    InternalExamHeader.Reset();
+                    InternalExamHeader.SetRange("Exam Schedule Code", "No.");
+                    IF InternalExamHeader.FindFirst() then begin
+                        InternalExamList.SetTableView(InternalExamHeader);
+                        InternalExamList.Run();
+                    end;
+                End;
+            }
+        }
+    }
+
+
+    trigger OnDeleteRecord(): Boolean
+    begin
+        // IF Status = Rec.Status::Released THEN
+        //     ERROR('You can not delete schedule no. %1 ', "No.");
+    end;
+
+    trigger OnNewRecord(BelowxRec: Boolean)
+    Begin
+        "Exam Type" := "Exam Type"::Internal;
+    End;
+
+    trigger OnAfterGetRecord()
+    Begin
+        Bool_Editable := true;
+        IF Status = Status::Released then
+            Bool_Editable := false;
+    End;
+
+    trigger OnOpenPage()
+    Begin
+        Bool_Editable := true;
+        IF Status = Status::Released then
+            Bool_Editable := false;
+    End;
+
+    var
+        ExamTimeTableLineCS: Record "Exam Time Table Line-CS";
+        UserSetup: Record "User Setup";
+        SubjectMaster: Record "Subject Master-CS";
+        InternalExamHeaderCS: Record "Internal Exam Header-CS";
+        InternalExamLineCS: Record "Internal Exam Line-CS";
+
+        ExaminationMgmt: Codeunit "Examination Management";
+        Bool_Editable: Boolean;
+
+
+        Text_10001Lbl: Label 'Do You Want To Generate Internal Exam for Schedule No. %1 ?';
+        Text_10003Lbl: Label 'Do you want to Re-open the Document No. %1 ?';
+        Text_10002Lbl: Label 'Do you want to Release the Document No. %1 ?';
+        Text_10004Lbl: Label 'Do you want to Export Exam Schedule No. %1 ?';
+}

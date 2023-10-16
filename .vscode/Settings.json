@@ -1,0 +1,5 @@
+{
+    "al.enablecodeanalysis": true,
+    "al.codeanalyzers" : ["$(AppsourceCode)","$(UICop)"],
+    "al.rulesetpatch" : "./alrules.json"
+}

@@ -1,0 +1,81 @@
+page 50166 "Semester Detail-CS"
+{
+    // version V.001-CS
+
+    Caption = 'Semester List';
+    //Editable = false;
+    PageType = List;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "Semester Master-CS";
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+                field(Code; Code)
+                {
+                    ApplicationArea = All;
+                }
+                field(Description; Description)
+                {
+                    ApplicationArea = All;
+                }
+                field(Year; Year)
+                {
+                    ApplicationArea = All;
+                }
+                field(Sequence; Sequence)
+                {
+                    ApplicationArea = All;
+                }
+                field(Graduation; Graduation)
+                {
+                    ApplicationArea = All;
+                }
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Start Date Not Applicable"; "Start Date Not Applicable")
+                {
+                    ApplicationArea = All;
+                }
+                field("Type Of Repeat"; "Type Of Repeat")
+                {
+                    ApplicationArea = All;
+                }
+                field("Immigration Applicable"; "Immigration Applicable")
+                {
+                    ApplicationArea = All;
+                }
+                field("OLR Applicable"; "OLR Applicable")
+                {
+                    ApplicationArea = All;
+                }
+                field(Credit; Credit)
+                {
+                    ApplicationArea = All;
+                }
+                field(Block; Block)
+                {
+                    ApplicationArea = All;
+                }
+                field("Show Cue in Exam RoleCenter "; "Show Cue in Exam RoleCenter ")
+                {
+                    ApplicationArea = All;
+                }
+            }
+        }
+    }
+
+    actions
+    {
+        area(processing)
+        {
+        }
+    }
+}
+

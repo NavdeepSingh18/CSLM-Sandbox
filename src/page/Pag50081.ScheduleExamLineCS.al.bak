@@ -1,0 +1,188 @@
+page 50081 "Schedule(Exam) Line-CS"
+{
+    // version V.001-CS
+
+    AutoSplitKey = true;
+    Caption = 'Schedule(Exam) Line-CS';
+    DelayedInsert = false;
+    PageType = ListPart;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "Exam Time Table Line-CS";
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+
+                field("Subject Code"; "Subject Code")
+                {
+                    ApplicationArea = All;
+                    trigger OnLookup(var Text: Text): Boolean
+                    begin
+                        ExamTimeTableHeadCS.Get("Document No.");
+                        CourseSubjectLine.Reset();
+                        CourseSubjectLine.SETRANGE("Academic Year", ExamTimeTableHeadCS."Academic Year");
+                        CourseSubjectLine.SETRANGE("Global Dimension 1 Code", ExamTimeTableHeadCS."Global Dimension 1 Code");
+                        CourseSubjectLine.SETRANGE(Examination, true);
+                        CourseSubjectLine.SETRANGE("Level Description", CourseSubjectLine."Level Description"::"External Examination");
+                        IF PAGE.RUNMODAL(0, CourseSubjectLine) = ACTION::LookupOK THEN begin
+                            ExamTimeTableLineCS.Reset();
+                            ExamTimeTableLineCS.SetRange("Document No.", "Document No.");
+                            IF ExamTimeTableLineCS.FindLast() then;
+                            "Line No." := ExamTimeTableLineCS."Line No." + 10000;
+                            "Subject Code" := CourseSubjectLine."Subject Code";
+                            "Subject Name" := CourseSubjectLine.Description;
+                            "Subject Group" := CourseSubjectLine."Subject Group";
+                            "Subject Type" := CourseSubjectLine."Subject Type";
+                            "Subject Class" := CourseSubjectLine."Subject Classification";
+                            "Course Code" := CourseSubjectLine."Course Code";
+                            "Program" := CourseSubjectLine."Program";
+                            "Semester Code" := CourseSubjectLine.Semester;
+                            Year := CourseSubjectLine.Year;
+                            "Examiner Type" := ExamTimeTableHeadCS."Exam Type";
+                            "Academic Year" := ExamTimeTableHeadCS."Academic Year";
+                            "Exam Classification" := ExamTimeTableHeadCS."Exam Classification";
+                            "Global Dimension 1 Code" := ExamTimeTableHeadCS."Global Dimension 1 Code";
+                            "Term" := ExamTimeTableHeadCS."Term";
+                            LineAutoFill("Line No.");
+                        end;
+                        ValidationCheckCS();
+                        CurrPage.Update();
+                    end;
+                }
+                field("Subject Name"; "Subject Name")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Subject Type"; "Subject Type")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                }
+                field("Subject Class"; "Subject Class")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = False;
+                }
+                field("Line No."; "Line No.")
+                {
+                    ApplicationArea = All;
+                    Visible = False;
+                }
+                field("Course Code"; "Course Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Program"; "Program")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Semester Code"; "Semester Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Year; Year)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Batch; Batch)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Exam Date"; "Exam Date")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Slot"; "Exam Slot")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Exam Slot New"; "Exam Slot New")
+                {
+                    ApplicationArea = All;
+                }
+                field("Start Time"; "Start Time")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+                field("End Time"; "End Time")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+                field("Start Time New"; "Start Time New")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                }
+                field("End Time New"; "End Time New")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Status; Status)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+                field("Exam Classification"; "Exam Classification")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = false;
+                }
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Visible = False;
+                }
+                field("Global Dimension 2 Code"; "Global Dimension 2 Code")
+                {
+                    ApplicationArea = All;
+                    Editable = true;
+                    Visible = False;
+                }
+                field("Ext Exam Attendance No."; "Ext Exam Attendance No.")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                }
+                field("Exam No."; "Exam No.")
+                {
+                    ApplicationArea = All;
+
+                }
+            }
+        }
+    }
+    var
+        ExamTimeTableHeadCS: Record "Exam Time Table Head-CS";
+        ExamTimeTableLineCS: Record "Exam Time Table Line-CS";
+        CourseSubjectLine: Record "Course Wise Subject Line-CS";
+
+}
+

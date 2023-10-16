@@ -1,0 +1,900 @@
+page 50685 "Withdrawal Approval Card"
+{
+    // version V.001-CS
+
+    // Sr.No   Emp.ID      Date            Trigger                                     Remarks
+    // -----------------------------------------------------------------------------------------------
+    // 01    CSPL-00059   07/01/2019       Approve - OnAction()                      Use for Approve .net function
+    // 02    CSPL-00059   07/01/2019       Reject - OnAction()                       Use for Reject.net function
+
+    PageType = Card;
+    UsageCategory = None;
+    SourceTable = "Withdrawal Approvals";
+    caption = 'Pending Withdrawal Approval Card';
+    DeleteAllowed = false;
+    InsertAllowed = false;
+
+    layout
+    {
+        area(content)
+        {
+            Field("Department Name"; "Department Name")
+            {
+                ApplicationArea = All;
+            }
+            group(General)
+            {
+                Editable = Boolean_gBool;
+                field("Withdrawal No."; "Withdrawal No.")
+                {
+                    ApplicationArea = All;
+
+                }
+                field("Application Date"; "Application Date")
+                {
+                    ApplicationArea = All;
+                }
+                field("Student No."; "Student No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Student Name"; "Student Name")
+                {
+                    ApplicationArea = All;
+                }
+                field("Enrolment No."; "Enrolment No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                }
+                field(Semester; Semester)
+                {
+                    ApplicationArea = All;
+                }
+                field("Withdrawal Date"; "Withdrawal Date")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Semester Start Date"; "Semester Start Date")
+                {
+                    ApplicationArea = All;
+                }
+                field("NSLDS Withdrawal Date"; "NSLDS Withdrawal Date")
+                {
+                    ApplicationArea = All;
+                    Visible = ProcessBoolean;
+                }
+                field("Date Of Determination"; "Date Of Determination")
+                {
+                    ApplicationArea = All;
+                    Visible = ProcessBoolean;
+                }
+                field("Last Date Of Attendance"; "Last Date Of Attendance")
+                {
+                    ApplicationArea = All;
+                    Visible = ProcessBoolean;
+                }
+                field("Type of Withdrawal"; "Type of Withdrawal")
+                {
+                    ApplicationArea = All;
+                }
+
+                field(Course; Course)
+                {
+                    ApplicationArea = All;
+                }
+                field("Waiver Code"; "Waiver Code")
+                {
+                    ApplicationArea = All;
+                    Editable = Boolean_gBool3;
+                    Visible = Boolean_gBool1;
+                }
+                field("Waiver Description"; "Waiver Description")
+                {
+                    ApplicationArea = All;
+                    Editable = Boolean_gBool3;
+                    Visible = Boolean_gBool1;
+                }
+                field("Waiver Amount"; "Waiver Amount")
+                {
+                    ApplicationArea = All;
+                    Editable = Boolean_gBool3;
+                    Visible = Boolean_gBool1;
+                }
+                field("Approved Amount"; "Approved Amount")
+                {
+                    ApplicationArea = All;
+                    Editable = Boolean_gBool3;
+                    Visible = Boolean_gBool1;
+                }
+                field("Reason Code"; "Reason Code")
+                {
+                    ApplicationArea = All;
+                    Visible = False;
+                }
+                field("Reason for Leaving"; "Reason for Leaving")
+                {
+                    ApplicationArea = All;
+                    MultiLine = true;
+                    Editable = false;
+                }
+                field("Rejection Remark"; "Rejection Remark")
+                {
+                    ApplicationArea = All;
+                    MultiLine = true;
+                }
+                field("Approved for Department"; "Approved for Department")
+                {
+                    ApplicationArea = All;
+                }
+
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                }
+                field(Status; Status)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    Style = Strong;
+                    StyleExpr = TRUE;
+                }
+            }
+            part("Withdrawal Student SubjectCard"; "Withdrawal Student SubjectCard")
+            {
+                visible = Boolean_gBool2;
+                Editable = false;
+                SubPageLink = "Withdrawal Request No." = FIELD("Withdrawal No.");
+                ApplicationArea = All;
+            }
+
+        }
+    }
+
+    actions
+    {
+        area(Processing)
+        {
+
+            action("Student Card")
+            {
+                ApplicationArea = All;
+                Image = Card;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
+                Caption = 'Student Card';
+                Runobject = page "Student Detail Card-CS";
+                RunPageLink = "No." = FIELD("Student No.");
+            }
+            action("Withdrawal Details")
+            {
+                ApplicationArea = All;
+                Image = ViewDetails;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
+                Caption = 'Withdrawal Details';
+                trigger OnAction()
+                var
+                    WithdrawalRec: Record "Withdrawal Student-CS";
+                    StudCollegeWithdrawal: Page "Stud. College Withdrawal-CS";
+                    StudCourseWithdrawal: Page "Stud. Withdrawal-CS";
+                begin
+                    WithdrawalRec.Reset();
+                    WithdrawalRec.SetRange("No.", "Withdrawal No.");
+                    IF WithdrawalRec.FindFirst() then
+                        Case "Type of Withdrawal" of
+                            "Type of Withdrawal"::"Course-Withdrawal":
+                                begin
+                                    StudCourseWithdrawal.SetTableView(WithdrawalRec);
+                                    StudCourseWithdrawal.Editable := False;
+                                    StudCourseWithdrawal.Run();
+                                end;
+                            "Type of Withdrawal"::"College-Withdrawal":
+                                begin
+                                    StudCollegeWithdrawal.SetTableView(WithdrawalRec);
+                                    StudCollegeWithdrawal.Editable := false;
+                                    StudCollegeWithdrawal.Run();
+                                end;
+                        end;
+                end;
+            }
+            action("Student Ledger Entries")
+            {
+                ApplicationArea = All;
+                Image = CustomerLedger;
+                Promoted = true;
+                PromotedOnly = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
+                trigger OnAction()
+                var
+                    CustomerLedEntries: Record "Cust. Ledger Entry";
+                    StudentMasterRec: Record "Student Master-CS";
+                begin
+                    StudentMasterRec.Get("Student No.");
+                    CustomerLedEntries.FilterGroup(0);
+                    CustomerLedEntries.reset();
+                    CustomerLedEntries.SetRange("Customer No.", StudentMasterRec."Original Student No.");
+                    CustomerLedEntries.SetRange(Semester, StudentMasterRec.Semester);
+                    CustomerLedEntries.SetFilter("Enrollment No.", StudentMasterRec."Enrollment No.");
+                    if CustomerLedEntries.FindFirst() then begin
+                        page.Run(25, CustomerLedEntries);
+                        CustomerLedEntries.FilterGroup(2);
+                    end;
+                end;
+            }
+            action("&Calculate")
+            {
+                ApplicationArea = All;
+                Caption = 'Calculate Waiver';
+                Image = Calculate;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                // Visible = Boolean_gBool1;
+                Visible = false;
+                trigger OnAction()
+                begin
+                    if "Waiver Calculation Allowed" = true then begin
+                        if "Waiver Calculated" then
+                            Error('Waiver Calculation is already done');
+
+                        IF CONFIRM(Text005Lbl, FALSE, "Withdrawal No.") THEN BEGIN
+                            if "Waiver Code" = '' then
+                                Error('Waiver Code must have a value in it for student No. %1', "Withdrawal No.");
+                            IF FeeGeneration.CheckFeeGenerated("Student No.", '', '', '', false) = true Then begin
+                                Validate("Waiver Amount", WithdrawalCreditMemoCreation("Student No.", Course, "Academic Year", Semester));
+                                "Waiver Calculated" := true;
+                                Modify();
+                            End else
+                                Error('Fee is not generated');
+
+                            WithdrawalApprovalRec.Reset();
+                            WithdrawalApprovalRec.SetRange("Withdrawal No.", "Withdrawal No.");
+                            if WithdrawalApprovalRec.FindSet() then begin
+                                repeat
+                                    WithdrawalApprovalRec."Waiver Code" := "Waiver Code";
+                                    WithdrawalApprovalRec."Waiver Description" := "Waiver Description";
+                                    WithdrawalApprovalRec."Waiver Amount" := "Waiver Amount";
+                                    WithdrawalApprovalRec."Approved Amount" := "Approved Amount";
+                                    WithdrawalApprovalRec.Modify();
+                                until WithdrawalApprovalRec.next() = 0;
+                            end;
+                            Message(Text006Lbl, "Withdrawal No.");
+                        end;
+                    end else
+                        Error('You do not have permission');
+                end;
+            }
+            action("&Approve")
+            {
+                ApplicationArea = All;
+                Caption = 'Approve';
+                Image = Approve;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                Visible = RejectApproveBoolean;
+                trigger OnAction()
+                var
+                //RecStudent: Record "Student Master-CS";
+                begin
+
+                    // if ("Waiver Calculation Allowed") AND ("Waiver Calculated" = false) then
+                    //     if Confirm(Text007Lbl, false, "Withdrawal No.") then begin
+                    //     end else
+                    //         exit;
+                    if ("Approved Amount" = 0) AND ("Type of Withdrawal" = "Type of Withdrawal"::"College-Withdrawal") then
+                        if Confirm(Text0010Lbl, false, "Withdrawal No.") then begin
+                        end else
+                            exit;
+                    // if "Waiver Amount" <> "Approved Amount" then
+                    //     if Confirm(Text008Lbl, false, "Withdrawal No.") then begin
+                    //     end else
+                    //         exit;
+
+                    IF CONFIRM(Text001Lbl, FALSE, "Withdrawal No.") THEN BEGIN
+                        if "Approved Amount" > 0 then
+                            TestField("Waiver Code");
+                        // if "Waiver Code" <> '' then
+                        //     TestField("Approved Amount");
+
+                        if Status = Status::Approved then
+                            Error('Status is already Approved');
+                        if "Rejection Remark" <> '' then
+                            Error('Rejection remark must be blank');
+
+                        IF "Final Approval" then begin
+                            WithdrawalApprovalRec.SetRange("Student No.", "Student No.");
+                            WithdrawalApprovalRec.SetRange("Type of Withdrawal", "Type of Withdrawal");
+                            WithdrawalApprovalRec.SetRange("Global Dimension 1 Code", "Global Dimension 1 Code");
+                            WithdrawalApprovalRec.SetFilter("Status", '%1', WithdrawalApprovalRec.Status::"Pending for Approval");
+                            WithdrawalApprovalRec.SetRange("Final Approval", false);
+                            IF WithdrawalApprovalRec.findfirst() then
+                                error('Department approval is pending for : %1', WithdrawalApprovalRec."Department Name");
+
+                            Status := Status::Approved;
+                            "Approved By" := UserId();
+                            "Approved On" := WorkDate();
+                            "Approved In Days" := "Approved On" - "Application Date";
+                            Modify();
+                            
+
+                            IF ("Approved Amount" <> 0) then begin
+                                CreditMemoGenJournalLineInsert("Student No.", "Approved Amount", "Waiver Code", "Waiver Description");
+                            end;
+                            WithdrawalFinalMail("Student No.", "Global Dimension 1 Code");
+                        end else begin
+                            Status := Status::Approved;
+                            "Approved By" := UserId();
+                            "Approved On" := WorkDate();
+                            "Approved In Days" := "Approved On" - "Application Date";
+                            Modify();
+                            WithdrawalApprovalDepartmentMail("Student No.");
+
+                            WithdrawalApprovalRec.Reset();
+                            WithdrawalApprovalRec.SetRange("Withdrawal No.", "Withdrawal No.");
+                            WithdrawalApprovalRec.SetRange("Final Approval", false);
+                            WithdrawalApprovalRec.SetRange("Type of Withdrawal", "Type of Withdrawal");
+                            WithdrawalApprovalRec.SetFilter(WithdrawalApprovalRec.Status, '<>%1', WithdrawalApprovalRec.Status::Approved);
+                            if not WithdrawalApprovalRec.FindFirst() then
+                                WithdrawalRequestMailtoFinalApprover("Student No.", "Approved for Department", "Global Dimension 1 Code");
+                        end;
+
+
+                        WithdrawalApprovalRec.Reset();
+                        WithdrawalApprovalRec.SetRange("Withdrawal No.", "Withdrawal No.");
+                        WithdrawalApprovalRec.SetFilter(WithdrawalApprovalRec.Status, '<>%1', WithdrawalApprovalRec.Status::Approved);
+                        if not WithdrawalApprovalRec.FindFirst() then begin
+                            WithdrawalStudentRec.Reset();
+                            WithdrawalStudentRec.SetRange("No.", "Withdrawal No.");
+                            if WithdrawalStudentRec.FindFirst() then begin
+                                WithdrawalStudentRec."Withdrawal Status" := WithdrawalStudentRec."Withdrawal Status"::Approved;
+                                WithdrawalStudentRec.Modify();
+                                if WithdrawalStudentRec."Type of Withdrawal" = WithdrawalStudentRec."Type of Withdrawal"::"College-Withdrawal" Then
+                                    if StudentMasterRec.Get("Student No.") then begin
+                                        StudentMasterRec."NSLDS Withdrawal Date" := "NSLDS Withdrawal Date";
+                                        StudentMasterRec."Date Of Determination" := "Date Of Determination";
+                                        StudentMasterRec."Last Date Of Attendance" := "Last Date Of Attendance";
+                                        StudentMasterRec.Validate(StudentMasterRec.Status, StudentStatusMangementCod.WithdwaralSignoff("Student No.", StudentMasterRec.Status, "Global Dimension 1 Code"));
+                                        StudentMasterRec.Modify();
+                                    end;
+                            end;
+                        end;
+
+                        CurrPage.Update();
+                        CurrPage.Close();
+                        Message(Text002Lbl, "Withdrawal No.");
+                    end else
+                        exit;
+                end;
+            }
+            action("&Process")
+            {
+                ApplicationArea = All;
+                Caption = 'Process';
+                Image = Process;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                Visible = ProcessBoolean;
+                trigger OnAction()
+                var
+                //RecStudent: Record "Student Master-CS";
+                begin
+                    // if ("Waiver Calculation Allowed") AND ("Waiver Calculated" = false) then
+                    //     if Confirm(Text007Lbl, false, "Withdrawal No.") then begin
+                    //     end else
+                    //         exit;
+                    // if "Waiver Amount" <> "Approved Amount" then
+                    //     if Confirm(Text008Lbl, false, "Withdrawal No.") then begin
+                    //     end else
+                    //         exit;
+
+                    TestField("NSLDS Withdrawal Date");
+                    TestField("Date Of Determination");
+                    TestField("Last Date Of Attendance");
+
+                    IF CONFIRM(Text001Lbl, FALSE, "Withdrawal No.") THEN BEGIN
+                        if "Approved Amount" > 0 then
+                            TestField("Waiver Code");
+                        // if "Waiver Code" <> '' then
+                        //     TestField("Approved Amount");
+
+                        if Status = Status::Approved then
+                            Error('Status is already Approved');
+                        if "Rejection Remark" <> '' then
+                            Error('Rejection remark must be blank');
+
+                        IF "Final Approval" then begin
+                            WithdrawalApprovalRec.SetRange("Student No.", "Student No.");
+                            WithdrawalApprovalRec.SetRange("Type of Withdrawal", "Type of Withdrawal");
+                            WithdrawalApprovalRec.SetRange("Global Dimension 1 Code", "Global Dimension 1 Code");
+                            WithdrawalApprovalRec.SetFilter("Status", '%1', WithdrawalApprovalRec.Status::"Pending for Approval");
+                            WithdrawalApprovalRec.SetRange("Final Approval", false);
+                            IF WithdrawalApprovalRec.findfirst() then
+                                error('Department approval is pending for : %1', WithdrawalApprovalRec."Department Name");
+
+                            Status := Status::Approved;
+                            "Approved By" := UserId();
+                            "Approved On" := WorkDate();
+                            "Approved In Days" := "Approved On" - "Application Date";
+                            Modify();
+
+                            IF ("Approved Amount" <> 0) then begin
+                                CreditMemoGenJournalLineInsert("Student No.", "Approved Amount", "Waiver Code", "Waiver Description");
+                            end;
+                            WithdrawalFinalMail("Student No.", "Global Dimension 1 Code");
+                        end else begin
+                            Status := Status::Approved;
+                            "Approved By" := UserId();
+                            "Approved On" := WorkDate();
+                            "Approved In Days" := "Approved On" - "Application Date";
+                            Modify();
+                            WithdrawalApprovalDepartmentMail("Student No.");
+
+                            WithdrawalApprovalRec.Reset();
+                            WithdrawalApprovalRec.SetRange("Withdrawal No.", "Withdrawal No.");
+                            WithdrawalApprovalRec.SetRange("Final Approval", false);
+                            WithdrawalApprovalRec.SetRange("Type of Withdrawal", "Type of Withdrawal");
+                            WithdrawalApprovalRec.SetFilter(WithdrawalApprovalRec.Status, '<>%1', WithdrawalApprovalRec.Status::Approved);
+                            if not WithdrawalApprovalRec.FindFirst() then
+                                WithdrawalRequestMailtoFinalApprover("Student No.", "Approved for Department", "Global Dimension 1 Code");
+                        end;
+
+
+                        WithdrawalApprovalRec.Reset();
+                        WithdrawalApprovalRec.SetRange("Withdrawal No.", "Withdrawal No.");
+                        WithdrawalApprovalRec.SetFilter(WithdrawalApprovalRec.Status, '<>%1', WithdrawalApprovalRec.Status::Approved);
+                        if not WithdrawalApprovalRec.FindFirst() then begin
+                            WithdrawalStudentRec.Reset();
+                            WithdrawalStudentRec.SetRange("No.", "Withdrawal No.");
+                            if WithdrawalStudentRec.FindFirst() then begin
+                                WithdrawalStudentRec."Withdrawal Status" := WithdrawalStudentRec."Withdrawal Status"::Approved;
+                                WithdrawalStudentRec."NSLDS Withdrawal Date" := "NSLDS Withdrawal Date";
+                                WithdrawalStudentRec."Date Of Determination" := "Date Of Determination";
+                                WithdrawalStudentRec."Last Date Of Attendance" := "Last Date Of Attendance";
+                                WithdrawalStudentRec.Modify();
+                                if WithdrawalStudentRec."Type of Withdrawal" = WithdrawalStudentRec."Type of Withdrawal"::"College-Withdrawal" Then
+                                    if StudentMasterRec.Get("Student No.") then begin
+                                        StudentMasterRec."NSLDS Withdrawal Date" := "NSLDS Withdrawal Date";
+                                        StudentMasterRec."Date Of Determination" := "Date Of Determination";
+                                        StudentMasterRec."Last Date Of Attendance" := "Last Date Of Attendance";
+                                        StudentMasterRec.Validate(StudentMasterRec.Status, StudentStatusMangementCod.WithdwaralSignoff("Student No.", StudentMasterRec.Status, "Global Dimension 1 Code"));
+                                        StudentMasterRec.Modify();
+                                    end;
+                            end;
+                        end;
+
+                        CurrPage.Update();
+                        CurrPage.Close();
+                        Message(Text009Lbl, "Withdrawal No.");
+                    end else
+                        exit;
+                end;
+            }
+            action("&Reject")
+            {
+                ApplicationArea = All;
+                Caption = 'Reject';
+                Image = Reject;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                Visible = RejectApproveBoolean;
+                trigger OnAction()
+                begin
+                    if Status = status::Rejected then
+                        Error('Status is already rejected');
+                    IF CONFIRM(Text003Lbl, FALSE, "Withdrawal No.") THEN BEGIN
+                        if Status = Status::Approved then
+                            Error('Approved Application cannot be Rejected');
+                        IF "Final Approval" = true then
+                            Error('Final Approval must be false, you cannot reject');
+                        IF "Approved Amount" <> 0 then
+                            Error('You cannot reject the Application No. %1,Approved amount is already calculated');
+
+                        TestField("Rejection Remark");
+
+                        if "Type of Withdrawal" = "Type of Withdrawal"::"College-Withdrawal" then begin
+                            Status := Status::Rejected;
+                            "Rejected On" := WorkDate();
+                            "Rejected By" := UserId();
+                            Modify();
+                            WithdrawalRejectionMail("Student No.");
+                        end;
+
+                        if "Type of Withdrawal" = "Type of Withdrawal"::"Course-Withdrawal" then begin
+                            WithdrawalApprovalRec.Reset();
+                            WithdrawalApprovalRec.SetRange("Withdrawal No.", "Withdrawal No.");
+                            if WithdrawalApprovalRec.FindSet() then
+                                repeat
+                                    WithdrawalApprovalRec.Status := WithdrawalApprovalRec.Status::Rejected;
+                                    WithdrawalApprovalRec."Rejected On" := WorkDate();
+                                    WithdrawalApprovalRec."Rejected By" := UserId();
+                                    WithdrawalApprovalRec.Modify();
+                                    WithdrawalRejectionMail("Student No.");
+                                until WithdrawalApprovalRec.next() = 0;
+
+                            WithdrawalStudentRec.Reset();
+                            WithdrawalStudentRec.SetRange("No.", "Withdrawal No.");
+                            if WithdrawalStudentRec.FindFirst() then begin
+                                WithdrawalStudentRec."Withdrawal Status" := WithdrawalStudentRec."Withdrawal Status"::Rejected;
+                                WithdrawalStudentRec.Modify();
+                            end;
+                        end;
+
+
+                        CurrPage.Update();
+                        CurrPage.Close();
+                        Message(Text004Lbl, "Withdrawal No.");
+                    end else
+                        exit;
+                end;
+            }
+
+        }
+    }
+    trigger OnOpenPage()
+    begin
+        Boolean_gBool := true;
+        If (Status = Status::Approved) then
+            Boolean_gBool := false;
+
+        Boolean_gBool1 := true;
+        Boolean_gBool2 := false;
+        If (Status = Status::"Pending for Approval") AND ("Type of Withdrawal" = "Type of Withdrawal"::"Course-Withdrawal") then begin
+            Boolean_gBool1 := false;
+            Boolean_gBool2 := true;
+        end;
+
+        Boolean_gBool3 := false;
+        If "Waiver Calculation Allowed" then
+            Boolean_gBool3 := true;
+
+        ProcessBoolean := false;
+        if ("Final Approval") AND (Status = Status::"Pending for Approval") then
+            ProcessBoolean := true;
+
+        RejectApproveBoolean := false;
+        if ("Final Approval" = false) AND (Status = Status::"Pending for Approval") then
+            RejectApproveBoolean := true;
+
+    end;
+
+    trigger OnAfterGetRecord()
+    Begin
+
+        Boolean_gBool := true;
+        If (Status = Status::Approved) then
+            Boolean_gBool := false;
+
+        Boolean_gBool1 := true;
+        Boolean_gBool2 := false;
+        If (Status = Status::"Pending for Approval") AND ("Type of Withdrawal" = "Type of Withdrawal"::"Course-Withdrawal") then begin
+            Boolean_gBool1 := false;
+            Boolean_gBool2 := true;
+        end;
+        Boolean_gBool3 := false;
+        If "Waiver Calculation Allowed" then
+            Boolean_gBool3 := true;
+
+        ProcessBoolean := false;
+        if "Final Approval" then
+            ProcessBoolean := true;
+
+        RejectApproveBoolean := true;
+        if "Final Approval" then
+            RejectApproveBoolean := false;
+
+
+    End;
+
+    procedure WithdrawalCreditMemoCreation(StudentNo: Code[20]; CourseCode: Code[20]; AcademicYear: Code[20]; Semester: Code[10]): Decimal
+    var
+        EducationMultiEventCalCS: Record "Education Multi Event Cal-CS";
+        EducationSetupCS: Record "Education Setup-CS";
+        StudentRec: Record "Student Master-CS";
+        RecFeeCourseHdr: Record "Fee Course Head-CS";
+        RecFeeCourseLine: Record "Fee Course Line-CS";
+        //RecSAPFeeCode: Record "SAP Fee Code";
+        FeeComponent: Record "Fee Component Master-CS";
+        CourseRec: Record "Course Master-CS";
+        recClassAttendanceLine: Record "Class Attendance Line-CS";
+        AmountFinalCal: Decimal;
+        MultCalenderDayCal: Integer;
+        WithdrawalDayCalculation: Integer;
+        AttendedPer: Decimal;
+        PerFinal: Decimal;
+        FinalDay: Integer;
+        AmountSum: Decimal;
+        SemFee: Decimal;
+        GVFee: Decimal;
+
+    begin
+        MultCalenderDayCal := 0;
+        WithdrawalDayCalculation := 0;
+        AttendedPer := 0;
+        PerFinal := 0;
+        FinalDay := 0;
+        StudentRec.get(StudentNo);
+        EducationSetupCS.RESET();
+        EducationSetupCS.SETRANGE("Global Dimension 1 Code", StudentRec."Global Dimension 1 Code");
+        IF EducationSetupCS.FINDFIRST() THEN
+            IF EducationSetupCS."Even/Odd Semester" = EducationSetupCS."Even/Odd Semester"::SPRING THEN BEGIN
+                EducationMultiEventCalCS.RESET();
+                EducationMultiEventCalCS.Setfilter("Event Code", '%1', Format(EducationSetupCS."Even/Odd Semester"::SPRING));
+                EducationMultiEventCalCS.SETRANGE("Academic Year", StudentRec."Academic Year");
+                IF EducationMultiEventCalCS.FINDFIRST() THEN BEGIN
+                    IF EducationSetupCS."Withdrawal End Date" = EducationSetupCS."Withdrawal End Date"::" " then
+                        Error('Withdrawal End Date Calculation must not be blank');
+                    EducationSetupCS.TestField(EducationSetupCS."Withdrawal Percentage");
+                    IF EducationSetupCS."Withdrawal End Date" = EducationSetupCS."Withdrawal End Date"::"Apply Date" then Begin
+                        MultCalenderDayCal := ((EducationMultiEventCalCS."Revised End Date") - (EducationMultiEventCalCS."Start Date") + 1);
+                        WithdrawalDayCalculation := ("Application Date") - (EducationMultiEventCalCS."Start Date") + 1;
+                    End else
+                        IF EducationSetupCS."Withdrawal End Date" = EducationSetupCS."Withdrawal End Date"::"Attendance Date" then begin
+                            RecClassAttendanceLine.Reset();
+                            RecClassAttendanceLine.SetRange("Student No.", StudentNo);
+                            RecClassAttendanceLine.SetRange(Semester, Semester);
+                            RecClassAttendanceLine.SetRange("Academic Year", AcademicYear);
+                            RecClassAttendanceLine.SetRange("Attendance Type", RecClassAttendanceLine."Attendance Type"::Present);
+                            IF recClassAttendanceLine.FindLast() then begin
+                                MultCalenderDayCal := (EducationMultiEventCalCS."Revised End Date") - (EducationMultiEventCalCS."Start Date") + 1;
+                                WithdrawalDayCalculation := (recClassAttendanceLine.Date) - (EducationMultiEventCalCS."Start Date") + 1;
+                            end;
+                        end;
+                    FinalDay := MultCalenderDayCal - WithdrawalDayCalculation;
+                    AttendedPer := (WithdrawalDayCalculation * 100) / MultCalenderDayCal;
+                    PerFinal := (FinalDay * 100) / MultCalenderDayCal;
+                    IF AttendedPer < EducationSetupCS."Withdrawal Percentage" then begin
+                        RecFeeCourseHdr.reset();
+                        RecFeeCourseHdr.Setrange("Course Code", CourseCode);
+                        RecFeeCourseHdr.SetRange("Academic Year", AcademicYear);
+                        RecFeeCourseHdr.SETRANGE("Global Dimension 1 Code", StudentRec."Global Dimension 1 Code");
+                        RecFeeCourseHdr.SETRANGE("Other Fees", false);
+                        CourseRec.Get(CourseCode);
+                        If CourseRec."Admitted Year Wise Fee" then
+                            RecFeeCourseHdr.SETRANGE(RecFeeCourseHdr."Admitted Year", StudentRec."Admitted Year");
+                        If CourseRec."Semester Wise Fee" then
+                            RecFeeCourseHdr.SETRANGE(RecFeeCourseHdr.Semester, Semester);
+                        RecFeeCourseHdr.SETRANGE(Year, StudentRec.Year);
+                        IF RecFeeCourseHdr.FindFirst() then begin
+                            AmountSum := 0;
+                            AmountFinalCal := 0;
+                            RecFeeCourseLine.Reset();
+                            RecFeeCourseLine.SetRange("Document No.", RecFeeCourseHdr."No.");
+                            IF RecFeeCourseLine.FindFirst() then begin
+                                Repeat
+                                    AmounttoPay := FeeGeneration.StudentTotalFee(StudentRec."No.", RecFeeCourseLine."Fee Code", '', '', False, SemFee, GVFee);
+                                    if AmounttoPay <> 0 then begin
+                                        FeeComponent.Get(RecFeeCourseLine."Fee Code");
+                                        if FeeComponent."Fee Group" = FeeComponent."Fee Group"::Institutional then
+                                            AmountSum += AmounttoPay;
+                                    end;
+                                // RecSAPFeeCode.Reset();
+                                // RecSAPFeeCode.SetRange("SAP Code", RecFeeCourseLine."Fee Code");
+                                // RecSAPFeeCode.SetFilter("Fee Group", '%1', RecSAPFeeCode."Fee Group"::Institutional);
+                                // if RecSAPFeeCode.FindFirst() then
+                                //     AmountSum += RecFeeCourseLine.Amount;
+                                until RecFeeCourseLine.Next() = 0;
+                                AmountFinalCal := (AmountSum * PerFinal) / 100;
+                                exit(AmountFinalCal);
+                            end;
+                            // WithdrawalStudentRec.Reset();
+                            // WithdrawalStudentRec.SetRange("No.", "Withdrawal No.");
+                            // if WithdrawalStudentRec.FindFirst() then;
+                            // IF (AmountFinalCal <> 0) AND (Calculation = false) then
+                            //     CreditMemoGenJournalLineInsert(StudentNo, AmountFinalCal, WithdrawalStudentRec."Reason for Leaving");
+                        end;
+                    end;
+                END;
+            END ELSE
+                IF EducationSetupCS."Even/Odd Semester" = EducationSetupCS."Even/Odd Semester"::FALL THEN BEGIN
+                    EducationMultiEventCalCS.RESET();
+                    EducationMultiEventCalCS.Setfilter("Event Code", '%1', Format(EducationSetupCS."Even/Odd Semester"::FALL));
+                    EducationMultiEventCalCS.SETRANGE("Academic Year", StudentRec."Academic Year");
+                    IF EducationMultiEventCalCS.FINDFIRST() THEN BEGIN
+                        IF EducationSetupCS."Withdrawal End Date" = EducationSetupCS."Withdrawal End Date"::" " then
+                            Error('Withdrawal End Date Calculation must not be blank');
+                        EducationSetupCS.TestField(EducationSetupCS."Withdrawal Percentage");
+                        IF EducationSetupCS."Withdrawal End Date" = EducationSetupCS."Withdrawal End Date"::"Apply Date" then Begin
+                            MultCalenderDayCal := ((EducationMultiEventCalCS."Revised End Date") - (EducationMultiEventCalCS."Start Date") + 1);
+                            WithdrawalDayCalculation := ("Application Date") - (EducationMultiEventCalCS."Start Date");
+                        End else
+                            IF EducationSetupCS."Withdrawal End Date" = EducationSetupCS."Withdrawal End Date"::"Attendance Date" then begin
+                                RecClassAttendanceLine.Reset();
+                                RecClassAttendanceLine.SetRange("Student No.", StudentNo);
+                                RecClassAttendanceLine.SetRange(Semester, Semester);
+                                RecClassAttendanceLine.SetRange("Academic Year", AcademicYear);
+                                RecClassAttendanceLine.SetRange("Attendance Type", RecClassAttendanceLine."Attendance Type"::Present);
+                                IF recClassAttendanceLine.FindLast() then begin
+                                    MultCalenderDayCal := (EducationMultiEventCalCS."Revised End Date") - (EducationMultiEventCalCS."Start Date");
+                                    WithdrawalDayCalculation := (recClassAttendanceLine.Date) - (EducationMultiEventCalCS."Start Date");
+                                end;
+                            end;
+
+                        FinalDay := MultCalenderDayCal - WithdrawalDayCalculation;
+                        AttendedPer := (WithdrawalDayCalculation * 100) / MultCalenderDayCal;
+                        PerFinal := (FinalDay * 100) / MultCalenderDayCal;
+                        IF AttendedPer < EducationSetupCS."Withdrawal Percentage" then begin
+
+                            RecFeeCourseHdr.reset();
+                            RecFeeCourseHdr.Setrange("Course Code", CourseCode);
+                            RecFeeCourseHdr.SetRange("Academic Year", AcademicYear);
+                            RecFeeCourseHdr.SETRANGE("Global Dimension 1 Code", StudentRec."Global Dimension 1 Code");
+                            RecFeeCourseHdr.SETRANGE("Other Fees", false);
+                            CourseRec.Get(CourseCode);
+                            If CourseRec."Admitted Year Wise Fee" then
+                                RecFeeCourseHdr.SETRANGE(RecFeeCourseHdr."Admitted Year", StudentRec."Admitted Year");
+                            If CourseRec."Semester Wise Fee" then
+                                RecFeeCourseHdr.SETRANGE(RecFeeCourseHdr.Semester, Semester);
+                            RecFeeCourseHdr.SETRANGE(Year, StudentRec.Year);
+                            IF RecFeeCourseHdr.FindFirst() then begin
+                                AmountSum := 0;
+                                AmountFinalCal := 0;
+                                RecFeeCourseLine.Reset();
+                                RecFeeCourseLine.SetRange("Document No.", RecFeeCourseHdr."No.");
+                                IF RecFeeCourseLine.FindFirst() then begin
+                                    Repeat
+                                        AmounttoPay := FeeGeneration.StudentTotalFee(StudentRec."No.", RecFeeCourseLine."Fee Code", '', '', False, SemFee, GVFee);
+                                        if AmounttoPay <> 0 then begin
+                                            FeeComponent.Get(RecFeeCourseLine."Fee Code");
+                                            if FeeComponent."Fee Group" = FeeComponent."Fee Group"::Institutional then
+                                                AmountSum += AmounttoPay;
+                                        end;
+                                    // RecSAPFeeCode.Reset();
+                                    // RecSAPFeeCode.SetRange("SAP Code", RecFeeCourseLine."Fee Code");
+                                    // RecSAPFeeCode.SetFilter("Fee Group", '%1', RecSAPFeeCode."Fee Group"::Institutional);
+                                    // if RecSAPFeeCode.FindFirst() then
+
+                                    until RecFeeCourseLine.Next() = 0;
+                                    AmountFinalCal := (AmountSum * PerFinal) / 100;
+                                    exit(AmountFinalCal);
+                                end;
+                                // WithdrawalStudentRec.Reset();
+                                // WithdrawalStudentRec.SetRange("No.", "Withdrawal No.");
+                                // if WithdrawalStudentRec.FindFirst() then;
+                                // IF (AmountFinalCal <> 0) AND (Calculation = false) then
+                                //     CreditMemoGenJournalLineInsert(StudentNo, AmountFinalCal, WithdrawalStudentRec."Reason for Leaving");
+                            end;
+                        end;
+                    end;
+                end;
+    end;
+
+
+    procedure CreditMemoGenJournalLineInsert(StudentNo: Code[20]; FinalAmountCal: Decimal; WaiverCode: Code[20];
+                                             WaiverDesc: Text[100])
+    Var
+        GenJournalLine: record "Gen. Journal Line";
+        GenJournalLine1: record "Gen. Journal Line";
+        GenJournalBatch: Record "Gen. Journal Batch";
+        RecFeeSetup: Record "Fee Setup-CS";
+        RecStudentMaster: Record "Student Master-CS";
+        NoSeries: Codeunit NoSeriesManagement;
+        DocumentNo: Code[20];
+        LineNo: Integer;
+    begin
+        RecStudentMaster.Get(StudentNo);
+        RecFeeSetup.Reset();
+        RecFeeSetup.SetRange("Global Dimension 1 Code", RecStudentMaster."Global Dimension 1 Code");
+        IF RecFeeSetup.FindFirst() then;
+        RecFeeSetup.TESTFIELD(RecFeeSetup."Withdrawal Template Name");
+        RecFeeSetup.TESTFIELD(RecFeeSetup."Withdrawal Batch Name");
+
+        GenJournalLine.Reset();
+        GenJournalLine.SETRANGE("Journal Template Name", RecFeeSetup."Withdrawal Template Name");
+        GenJournalLine.SETRANGE("Journal Batch Name", RecFeeSetup."Withdrawal Batch Name");
+        IF GenJournalLine.FINDLAST() THEN
+            DocumentNo := INCSTR(GenJournalLine."Document No.")
+        ELSE begin
+            GenJournalBatch.RESET();
+            GenJournalBatch.SETRANGE("Journal Template Name", RecFeeSetup."Withdrawal Template Name");
+            GenJournalBatch.SETRANGE(Name, RecFeeSetup."Withdrawal Batch Name");
+            IF GenJournalBatch.FINDFIRST() THEN;
+            DocumentNo := NoSeries.GetNextNo(GenJournalBatch."No. Series", 0D, false);
+        end;
+        // DocumentNo := NoSeries.GetNextNo(RecFeeSetup."Withdrawal Document No.", 0D, TRUE);
+
+        LineNo := 0;
+        GenJournalLine1.RESET();
+        GenJournalLine1.SETRANGE("Journal Template Name", RecFeeSetup."Withdrawal Template Name");
+        GenJournalLine1.SETRANGE("Journal Batch Name", RecFeeSetup."Withdrawal Batch Name");
+        IF GenJournalLine1.FINDLAST() THEN
+            LineNo := GenJournalLine1."Line No." + 10000
+        ELSE
+            LineNo := 10000;
+
+        GenJournalLine.reset();
+        GenJournalLine.INIT();
+        GenJournalLine.VALIDATE(GenJournalLine."Journal Template Name", RecFeeSetup."Withdrawal Template Name");
+        GenJournalLine.VALIDATE(GenJournalLine."Journal Batch Name", RecFeeSetup."Withdrawal Batch Name");
+        GenJournalLine.VALIDATE(GenJournalLine."Line No.", LineNo);
+        GenJournalLine.VALIDATE(GenJournalLine."Posting Date", WORKDATE());
+        GenJournalLine.VALIDATE(GenJournalLine."Document Type", GenJournalLine."Document Type"::"Credit Memo");
+        GenJournalLine.VALIDATE(GenJournalLine."Document No.", DocumentNo);
+        GenJournalLine.VALIDATE(GenJournalLine."Account Type", GenJournalLine."Account Type"::"G/L Account");
+        GenJournalLine.VALIDATE(GenJournalLine."Account No.", RecFeeSetup."Withdrawal G/L Account No.");
+        GenJournalLine.VALIDATE(GenJournalLine."Debit Amount", FinalAmountCal);
+        GenJournalLine.VALIDATE(GenJournalLine."Bal. Account Type", GenJournalLine."Bal. Account Type"::Customer);
+        GenJournalLine.VALIDATE(GenJournalLine."Bal. Account No.", RecStudentMaster."Original Student No.");
+        GenJournalLine.VALIDATE(GenJournalLine."Shortcut Dimension 1 Code", RecStudentMaster."Global Dimension 1 Code");
+        GenJournalLine.VALIDATE(GenJournalLine."Shortcut Dimension 2 Code", RecStudentMaster."Global Dimension 2 Code");
+        GenJournalLine.VALIDATE(GenJournalLine."Currency Code", RecStudentMaster."Currency Code");
+        GenJournalLine.VALIDATE(GenJournalLine.Year, RecStudentMaster.Year);
+        GenJournalLine.VALIDATE(GenJournalLine.Course, RecStudentMaster."Course Code");
+        GenJournalLine.Term := RecStudentMaster.Term;
+        GenJournalLine."Waiver/Scholar/Grant Code" := WaiverCode;
+        GenJournalLine."Waiver/Scholar/Grant Desc" := WaiverDesc;
+        GenJournalLine.VALIDATE(GenJournalLine."Academic Year", RecStudentMaster."Academic Year");
+        GenJournalLine.VALIDATE(GenJournalLine."Admitted Year", RecStudentMaster."Admitted Year");
+        GenJournalLine.Description := WaiverDesc;
+        GenJournalLine.Reason := "Reason for Leaving";
+        if SourceSchorlarshipRec.Get(WaiverCode) then begin
+            SapRec.Reset();
+            SapRec.SetRange("SAP Code", SourceSchorlarshipRec."SAP Code");
+            if SapRec.FindFirst() then begin
+                GenJournalLine."SAP Code" := SapRec."SAP Code";
+                GenJournalLine."Fee Code" := SapRec."SAP Code";
+                GenJournalLine."SAP G/L Account" := SapRec."SAP G/L Account";
+                GenJournalLine."SAP Assignment Code" := SapRec."SAP Assignment Code";
+                GenJournalLine."SAP Description" := SapRec."SAP Description";
+                GenJournalLine."SAP Cost Centre" := SapRec."SAP Cost Centre";
+                GenJournalLine."SAP Profit Centre" := SapRec."SAP Profit Centre";
+                GenJournalLine."SAP Company Code" := SapRec."SAP Company Code";
+                GenJournalLine."SAP Bus. Area" := SapRec."SAP Bus. Area";
+                GenJournalLine."Fee Group" := SapRec."Fee Group";
+            end;
+        end;
+        GenJournalLine.INSERT(TRUE);
+
+        if RecFeeSetup."Waiver Auto Post" then begin
+            GenJournalLinePost.Reset();
+            GenJournalLinePost.SETRANGE("Journal Template Name", RecFeeSetup."Withdrawal Template Name");
+            GenJournalLinePost.SETRANGE("Journal Batch Name", RecFeeSetup."Withdrawal Batch Name");
+            IF GenJournalLinePost.Findset() THEN
+                CODEUNIT.RUN(CODEUNIT::"Gen. Jnl.-Post Batch", GenJournalLinePost);
+        end;
+    end;
+
+    var
+        WithdrawalStudentRec: Record "Withdrawal Student-CS";
+        WithdrawalApprovalRec: Record "Withdrawal Approvals";
+        SourceSchorlarshipRec: Record "Source Scholarship-CS";
+        SapRec: Record "SAP Fee Code";
+        GenJournalLinePost: Record "Gen. Journal Line";
+        StudentMasterRec: Record "Student Master-CS";
+        FeeGeneration: Report "Fee Generation New";
+        StudentStatusMangementCod: Codeunit "Student Status Mangement";
+        AmounttoPay: Decimal;
+
+        Boolean_gBool: Boolean;
+        Boolean_gBool1: Boolean;
+        Boolean_gBool2: Boolean;
+        Boolean_gBool3: Boolean;
+        ProcessBoolean: Boolean;
+        RejectApproveBoolean: Boolean;
+        Text001Lbl: Label 'Do you want to Approve Application No. %1 ?';
+        Text002Lbl: Label 'Application No. %1 has been Approved.';
+        Text003Lbl: Label 'Do you want to Rejected Application No. %1 ?';
+        Text004Lbl: Label 'Application No. %1 has been Rejected.';
+        Text005Lbl: Label 'Do you want to calculate Waiver Amount for Application No. %1 ?';
+        Text006Lbl: Label 'Waiver Amount Calculated for Application No. %1 ?';
+        Text007Lbl: Label 'Waiver Amount is not Calculated for Application No. %1, Do you still want to continue?';
+        Text008Lbl: Label 'Approved Amount is not same to Waiver Amount for Application No. %1, Do you still want to continue?';
+        Text009Lbl: Label 'Application No. %1 has been Processed.';
+        Text0010Lbl: Label 'Approved Amount is Zero for Application No. %1, Do you still want to continue?';
+}

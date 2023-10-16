@@ -1,0 +1,55 @@
+page 50517 "Internal Exam Schedule List"
+{
+    // version V.001-CS
+
+    Caption = 'Internal Exam Schedule List';
+    CardPageID = "Internal Exam Schedule";
+    Editable = false;
+    PageType = List;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "Exam Time Table Head-CS";
+    SourceTableView = sorting("No.") where("Exam Type" = filter(Internal));
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+                field("No."; "No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Type"; "Exam Type")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Slot"; "Exam Slot")
+                {
+                    ApplicationArea = All;
+                }
+                field("Subject Classification"; "Subject Classification")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Classification"; "Exam Classification")
+                {
+                    ApplicationArea = All;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                }
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                }
+                field(Status; Status)
+                {
+                    ApplicationArea = All;
+                }
+            }
+        }
+    }
+}

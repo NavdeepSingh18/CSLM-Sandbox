@@ -1,0 +1,74 @@
+page 50083 "Schedule(Exam) List-CS"
+{
+    // version V.001-CS
+
+    CardPageID = "Schedule(Exam) Hdr-CS";
+    Editable = false;
+    PageType = List;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "Exam Time Table Head-CS";
+    SourceTableView = sorting("No.") where("Exam Type" = filter(External));
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+                field("No."; "No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Type"; "Exam Type")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Method"; "Exam Method")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Exam Slot"; "Exam Slot")
+                {
+                    ApplicationArea = All;
+                    
+                }
+                field("Term"; "Term")
+                {
+                    ApplicationArea = All;
+                }
+                field("Subject Classification"; "Subject Classification")
+                {
+                    ApplicationArea = All;
+                }
+                field("Exam Classification"; "Exam Classification")
+                {
+                    ApplicationArea = All;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                }
+                field("Start Time"; "Start Time")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("End Time"; "End Time")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field(Status; Status)
+                {
+                    ApplicationArea = All;
+                }
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                }
+            }
+        }
+    }
+}

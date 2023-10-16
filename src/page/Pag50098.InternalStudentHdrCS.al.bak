@@ -1,0 +1,512 @@
+page 50098 "Internal Student Hdr-CS"
+{
+    // version V.001-CS
+
+    // Sr.No  Emp.ID      Date      Trigger                                 Remarks
+    // -----------------------------------------------------------------------------------------------
+    // 01.   CSPL-00174  14-05-19   OnAfterGetRecord()                      Code added for Hide Semester/year and Validation .
+    // 02.   CSPL-00174  14-05-19   OnNewRecord()                           Code added for Validation .
+    // 03.   CSPL-00174  14-05-19   No. - OnAssistEdit()                    Code added for no.Series Generation   .
+    // 04.   CSPL-00174  14-05-19   Course Code - OnValidate()              Code added for Hide Semester/Year and Current page Update .
+    // 05.   CSPL-00174  14-05-19   Type Of Course - OnValidate()           Code added for Hide Semester/Year .
+    // 06.   CSPL-00174  14-05-19   LOCAL SetControlAppearance()            Code added for Get Value of User ID and Open approval Entry Record .
+    // 07.   CSPL-00174  14-05-19   LOCAL CheckLineExists()                 Code added for Validation .
+    // 08.   CSPL-00174  14-05-19   Get Student - OnAction()                Code added for Validation and Get Internal Students .
+    // 09.   CSPL-00174  14-05-19   Upload Internal Student - OnAction()    Code added for Upload Internal Students .
+    // 10.   CSPL-00174  14-05-19   Publish Marks - OnAction()              Code added for Publish Student Internal Marks.
+    // 11.   CSPL-00174  14-05-19   Internal Grade - OnAction()             Code added for Update Internal Grade.
+    // 12.   CSPL-00174  14-05-19   SendApprovalRequest - OnAction()        Code added for Function Call.
+    // 13.   CSPL-00174  14-05-19   Release - OnAction()                    Code added for Modify Field.
+    // 14.   CSPL-00174  14-05-19   Reopen - OnAction()                     Code added for Modify Field.
+
+    Caption = 'Internal Examination';
+    DeleteAllowed = true;
+    PageType = Document;
+    RefreshOnActivate = true;
+    UsageCategory = Administration;
+    ApplicationArea = All;
+    SourceTable = "Internal Exam Header-CS";
+
+    layout
+    {
+        area(content)
+        {
+            group(General)
+            {
+                Caption = 'General';
+                Editable = ReleaseDocument;
+                field("No."; "No.")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    // trigger OnAssistEdit()
+                    // begin
+                    //     //Code added for No.Series Generation ::CSPL-00174::140519: Start
+                    //     IF Assistedit(xRec) THEN
+                    //         CurrPage.Update();
+                    //     //Code added for No.Series Generation ::CSPL-00174::140519: End
+                    // end;
+                }
+                // field("Exam Schedule Code"; "Exam Schedule Code")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+
+                field("Course Code"; "Course Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+
+                    trigger OnValidate()
+                    begin
+                        //Code added for Hide Semester/Year and Current page Update::CSPL-00174::140519: Start
+                        EventsOfExaminationCS.CSHideSemesterYear(HideSemseter, HideYear, "Type Of Course");
+                        CurrPage.Update();
+                        //Code added for Hide Semester/Year and Current page Update::CSPL-00174::140519: End
+                    end;
+                }
+                field("Course Name"; "Course Name")
+                {
+                    ApplicationArea = All;
+                }
+                // field("Student Group"; "Student Group")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                // }
+                // field("Type Of Course"; "Type Of Course")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+
+                //     trigger OnValidate()
+                //     begin
+                //         //Code added for Hide Semester/Year::CSPL-00174::140519: Start
+                //         EventsOfExaminationCS.CSHideSemesterYear(HideSemseter, HideYear, "Type Of Course");
+                //         //Code added for Hide Semester/Year::CSPL-00174::140519: End
+                //     end;
+                // }
+                field(Semester; Semester)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    //Editable = HideSemseter;
+                }
+                field(Year; Year)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                    // Editable = HideYear;
+                }
+                field(Term; Term)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                // field(Section; Section)
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                // field("Subject Class"; "Subject Class")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                // }
+                // field("Subject Type"; "Subject Type")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                // }
+                field("Subject Code"; "Subject Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Subject Description"; "Subject Description")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
+                field("Document Type"; "Document Type")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                // field("Exam Classification"; "Exam Classification")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                // }
+                // field("Maximum Mark"; "Maximum Mark")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                // }
+                // field("Maximum Weightage"; "Maximum Weightage")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+                // field("Portal ID"; "Portal ID")
+                // {
+                //     ApplicationArea = All;
+                //     Editable = false;
+                //     Visible = false;
+                // }
+                field(Status; Status)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                // field("Staff Code"; "Staff Code")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+                // field("Staff Name"; "Staff Name")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+                // field("Exam Type"; "Exam Type")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+
+                // }
+                // field("Exam Group"; "Exam Group")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+                // field("Exam Method Code"; "Exam Method Code")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+                // field("Exam Date"; "Exam Date")
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+
+                // }
+                // field(Updated; Updated)
+                // {
+                //     ApplicationArea = All;
+                //     Visible = false;
+                // }
+            }
+            part("Lines"; "Internal Student SubPage-CS")
+            {
+                ApplicationArea = All;
+                Editable = ReleaseDocument;
+                SubPageLink = "Document No." = FIELD("No.");
+            }
+        }
+    }
+
+    actions
+    {
+        area(navigation)
+        {
+            group("Function")
+            {
+                Caption = 'Functions';
+                action("Publish Marks")
+                {
+                    Image = Process;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    trigger OnAction()
+                    begin
+                        PublishMarks(Rec);
+                    end;
+                }
+                action("Student Subject Exams")
+                {
+                    ApplicationArea = all;
+                    Promoted = true;
+                    PromotedCategory = Process;
+                    PromotedOnly = true;
+                    RunObject = Page "Student Subject Exam List";
+                    RunPageLink = "Published Document No." = field("No.");
+                }
+            }
+            group(Report)
+            {
+                action("Print Student Internal Marks")
+                {
+                    Image = Report;
+                    trigger OnAction()
+                    var
+
+                        ICMMarks: Report "ICM Scores";
+                    begin
+                        Clear(ICMMarks);
+                        ICMMarks.Reportvariable('', "No.");
+                        ICMMarks.Run();
+
+                    end;
+                }
+            }
+
+            group(Release_Document)
+            {
+                Caption = 'Release';
+                Image = ReleaseDoc;
+                action(Release)
+                {
+                    Caption = 'Re&lease';
+                    Image = ReleaseDoc;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ShortCutKey = 'Ctrl+F9';
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    begin
+                        //Code added for Modify Field::CSPL-00174::140519: Start
+                        //IF Status = Status::Open THEN//CODE ADDED 30-04-20
+                        // ERROR(Text_10002Lbl);
+
+                        IF Status = Status::Published THEN
+                            ERROR(Text_10003Lbl);
+
+                        IF Status = Status::Open THEN begin
+                            IF CONFIRM(Text_10006Lbl, FALSE, "No.") THEN BEGIN
+                                CheckLineExists();
+                                Status := Status::Released;
+                                Updated := TRUE;
+                                Modify();
+
+                                InternalExamLineCS2.Reset();
+                                InternalExamLineCS2.SETRANGE("Document No.", Rec."No.");
+                                IF InternalExamLineCS2.FINDSET() THEN BEGIN
+                                    InternalExamLineCS2.MODIFYALL(Updated, TRUE);
+                                    InternalExamLineCS2.MODIFYALL(Status, InternalExamLineCS2.Status::Released);
+                                END;
+                            End ELSE
+                                EXIT;
+                        end;
+                        CurrPage.UPDATE(FALSE);
+                        // Code added for Modify Field::CSPL-00174::140519: End
+                    end;
+                }
+                action(Reopen)
+                {
+                    Caption = 'Re&open';
+                    Image = ReOpen;
+                    Promoted = true;
+                    PromotedOnly = true;
+                    PromotedCategory = Process;
+                    ApplicationArea = All;
+                    trigger OnAction()
+                    begin
+                        // Code added for Modify Field::CSPL-00174::140519: Start
+                        IF Status = Status::Released THEN begin
+                            IF CONFIRM(Text_10005Lbl, FALSE, "No.") THEN BEGIN
+                                Status := Status::Open;
+                                Updated := TRUE;
+                                Modify();
+
+                                InternalExamLineCS2.Reset();
+                                InternalExamLineCS2.SETRANGE("Document No.", Rec."No.");
+                                IF InternalExamLineCS2.FINDSET() THEN BEGIN
+                                    InternalExamLineCS2.MODIFYALL(Updated, TRUE);
+                                    InternalExamLineCS2.MODIFYALL(Status, InternalExamLineCS2.Status::Open);
+                                END;
+                            End;
+                            CurrPage.UPDATE(FALSE);
+                        END ELSE
+                            EXIT;
+                        // Code added for Modify Field::CSPL-00174::140519: End
+                    end;
+                }
+
+            }
+        }
+    }
+
+    trigger OnAfterGetRecord()
+    begin
+        //Code added for Hide Semester/year and Validation  ::CSPL-00174::140519: Start
+        EventsOfExaminationCS.CSHideSemesterYear(HideSemseter, HideYear, "Type Of Course");
+        EventsOfExaminationCS.CSRestrictDocumentAfterRelease(Status, ReleaseDocument);
+        SetControlAppearance();
+        //Code added for Hide Semester/year and Validation ::CSPL-00174::140519: End
+    end;
+
+    trigger OnNewRecord(BelowxRec: Boolean)
+    begin
+        //Code added for Validation ::CSPL-00174::140519: Start
+        EventsOfExaminationCS.CSRestrictDocumentAfterRelease(Status, ReleaseDocument);
+        //Code added for Validation  ::CSPL-00174::140519: End
+    end;
+
+    var
+
+        InternalMarksUploadCS: Record "Internal Marks Upload-CS";
+        InternalExamHeaderCS: Record "Internal Exam Header-CS";
+        InternalExamLineCS: Record "Internal Exam Line-CS";
+        InternalExamLineCS2: Record "Internal Exam Line-CS";
+        ActionMarkCS: Codeunit "Action Mark -CS";
+        EventsOfExaminationCS: Codeunit "Events Of Examination-CS";
+        HideYear: Boolean;
+        HideSemseter: Boolean;
+        OpenApprovalEntriesExistForCurrUser: Boolean;
+        OpenApprovalEntriesExist: Boolean;
+        ReleaseDocument: Boolean;
+
+        Text_10001Lbl: Label 'Student Internal Exam Line does not exists.';
+        //  Text_10002Lbl: Label 'This document can only be released when the approval process is complete.';
+
+        Text_10003Lbl: Label 'The approval process must be cancelled or completed to reopen this document.';
+
+        Text_10005Lbl: Label 'Do You Want To Open the Document No. %1 ?';
+        Text_10006Lbl: Label 'Do You Want To Release the Document No. %1 ?';
+        Text_10007Lbl: Label 'Do You Want To Publish the Document No. %1 ?';
+
+
+    local procedure SetControlAppearance()
+    var
+        ApprovalsMgmt: Codeunit "Approvals Mgmt.";
+    begin
+        //Code added for Get Value of User ID and Open approval Entry Record::CSPL-00174::140519: Start
+        OpenApprovalEntriesExistForCurrUser := ApprovalsMgmt.HasOpenApprovalEntriesForCurrentUser(RECORDID());
+        OpenApprovalEntriesExist := ApprovalsMgmt.HasOpenApprovalEntries(RECORDID());
+        //Code added for Get Value of User ID and Open approval Entry Record::CSPL-00174::140519: End
+    end;
+
+    local procedure CheckLineExists()
+    begin
+        //Code added for Validation::CSPL-00174::140519: Start
+        InternalExamLineCS2.Reset();
+        InternalExamLineCS2.SETRANGE("Document No.", "No.");
+        IF InternalExamLineCS2.FINDSET() THEN begin
+            REPEAT
+                if InternalExamLineCS2."Exam Slot" <> '' then
+                    InternalExamLineCS2.TESTFIELD(InternalExamLineCS2."Attendance Type")
+                else
+                    InternalExamLineCS2.TESTFIELD(InternalExamLineCS2."Attendance Type", InternalExamLineCS2."Attendance Type"::" ");
+            UNTIL InternalExamLineCS2.NEXT() = 0;
+        end Else
+            ERROR(Text_10001Lbl);
+        // Code added for Validation::CSPL-00174::140519: End
+    end;
+
+    procedure PublishMarks(IntExamHdr: Record "Internal Exam Header-CS"): Boolean
+    var
+        IntExamLn: Record "Internal Exam Line-CS";
+        StudSubExam: Record "Student Subject Exam";
+        StudSubExam2: Record "Student Subject Exam";
+        CourseSem: Record "Course Sem. Master-CS";
+        LineNo: Integer;
+        PublishedInt: Integer;
+    begin
+        PublishedInt := 0;
+        if not Confirm('Do you want to publish the marks of Document No. %1', false, IntExamHdr."No.") then
+            Exit(false);
+        if IntExamHdr.Status = IntExamHdr.Status::Published then
+            Error('Document No. %1 is already Published', IntExamHdr."No.");
+        if IntExamHdr.Status = IntExamHdr.Status::Open then
+            Error('Status must be Released for Document No. %1', IntExamHdr."No.");
+        IntExamLn.Reset();
+        IntExamLn.SetRange("Document No.", IntExamHdr."No.");
+        IntExamLn.FindSet();
+        repeat
+            IntExamLn.TestField("Student No.");
+            IntExamLn.TestField("Enrollment No.");
+            IntExamLn.TestField("Subject Code");
+            IntExamLn.TestField("Obtained Internal Marks");
+            IntExamLn.TestField("Maximum Internal  Marks");
+            IntExamLn.TestField("Obtained Weightage");
+            IntExamLn.TestField("Maximum Weightage");
+            IntExamLn.TestField(Semester);
+            IntExamLn.TestField("Academic Year");
+            IntExamLn.TestField(Course);
+            IntExamLn.TestField("Exam Date");
+            //key(Key1; "Student No.", Course, Semester, "Academic Year", "Subject Code", Section)
+            StudSubExam.Reset();
+            StudSubExam.SetRange("Student No.", IntExamLn."Student No.");
+            StudSubExam.SetRange(Course, IntExamLn.Course);
+            StudSubExam.SetRange(Semester, IntExamLn.Semester);
+            StudSubExam.SetRange("Academic Year", IntExamLn."Academic Year");
+            StudSubExam.SetRange("Subject Code", IntExamLn."Subject Code");
+            StudSubExam.SetRange("Sitting Date", IntExamLn."Exam Date");
+            if StudSubExam.FindFirst() then
+                Error('Results already exist for Student No. %1, Course Course Code %2, Semester %3,Academic Year %4 and Subject Code %5',
+                IntExamLn."Student No.", IntExamLn.Course, IntExamLn.Semester, IntExamLn."Academic Year", IntExamLn."Subject Code");
+
+            StudSubExam.Reset();
+            StudSubExam.SetCurrentKey("Line No.");
+            StudSubExam.Ascending(true);
+            StudSubExam.SetRange("Student No.", IntExamLn."Student No.");
+            StudSubExam.SetRange(Course, IntExamLn.Course);
+            StudSubExam.SetRange(Semester, IntExamLn.Semester);
+            StudSubExam.SetRange("Academic Year", IntExamLn."Academic Year");
+            StudSubExam.SetRange("Subject Code", IntExamLn."Subject Code");
+            if StudSubExam.FindLast() then;
+            LineNo := StudSubExam."Line No." + 1;
+
+            // Message('%1....%2', IntExamLn."Document No.", IntExamLn."Line No.");
+            Clear(StudSubExam2);
+            StudSubExam2.Reset();
+            StudSubExam2.Init();
+            StudSubExam2.Validate("Student No.", IntExamLn."Student No.");
+            StudSubExam2.Validate(Course, IntExamLn.Course);
+            StudSubExam2.Validate(Semester, IntExamLn.Semester);
+            StudSubExam2.Validate("Academic Year", IntExamLn."Academic Year");
+            StudSubExam2.Validate("Subject Code", IntExamLn."Subject Code");
+            StudSubExam2.Validate(Term, IntExamLn.Term);
+            StudSubExam2.validate(Year, IntExamLn.Year);
+            StudSubExam2."Line No." := LineNo;
+            StudSubExam2.Validate("Sitting Date", IntExamLn."Exam Date");
+            StudSubExam2.Validate("Enrollment No", IntExamLn."Enrollment No.");
+            StudSubExam2.Validate("Internal Mark", IntExamLn."Obtained Internal Marks");
+            StudSubExam2.Validate(Total, IntExamLn."Obtained Internal Marks");
+            StudSubExam2.validate("Percentage Obtained", IntExamLn."Percentage Obtained");
+            StudSubExam2."Maximum Mark" := IntExamLn."Maximum Internal  Marks";
+            CourseSem.Reset();
+            CourseSem.SetRange("Course Code", IntExamLn.Course);
+            CourseSem.SetRange("Semester Code", IntExamLn.Semester);
+            CourseSem.SetRange("Academic Year", IntExamLn."Academic Year");
+            CourseSem.SetRange(Term, IntExamLn.Term);
+            CourseSem.FindFirst();
+            CourseSem.TestField("Start Date");
+            CourseSem.TestField("End Date");
+            StudSubExam2.Validate("Start Date", CourseSem."Start Date");
+            StudSubExam2.Validate("End Date", CourseSem."End Date");
+            StudSubExam2.Credit := IntExamLn."Maximum Weightage";
+            StudSubExam2."Credit Earned" := IntExamLn."Obtained Weightage";
+            StudSubExam2."Total Internal" := IntExamLn."Maximum Internal  Marks";
+            StudSubExam2."User ID" := UserId;
+            StudSubExam2."Published Document No." := IntExamLn."Document No.";
+            // StudSubExam2.Internal Exam Doc No.:= IntExamLn."Document No.";
+            StudSubExam2.Insert(True);
+            PublishedInt += 1;
+
+
+        until IntExamLn.Next() = 0;
+        if PublishedInt > 0 then begin
+            IntExamHdr.Validate(Status, IntExamHdr.Status::Published);
+            IntExamHdr.Modify(True);
+        end;
+
+    end;
+}
+

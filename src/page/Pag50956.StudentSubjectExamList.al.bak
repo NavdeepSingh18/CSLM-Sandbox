@@ -1,0 +1,241 @@
+page 50956 "Student Subject Exam List"
+{
+    PageType = List;
+    ApplicationArea = All;
+    UsageCategory = Lists;
+    SourceTable = "Student Subject Exam";
+    Caption = 'Student Subject Exam List';
+    Editable = false;
+    DeleteAllowed = false;
+    InsertAllowed = false;
+    ModifyAllowed = false;
+
+
+    layout
+    {
+        area(Content)
+        {
+            repeater("Student Subject Exam")
+            {
+                Field("Student No."; "Student No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Enrollment No"; "Enrollment No")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                Field("Student Name"; "Student Name")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field(Semester; Semester)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Subject Code"; "Subject Code")
+                {
+                    ApplicationArea = All;
+                }
+                Field(Description; Description)
+                {
+                    ApplicationArea = All;
+                }
+                Field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field(Published; Published)
+                {
+                    ApplicationArea = All;
+                }
+                field("Published Document No."; "Published Document No.")
+                {
+                    ApplicationArea = All;
+                    Visible = False;
+                }
+
+                Field(Course; Course)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+                field("Internal Mark"; "Internal Mark")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Shelf Exam Value"; "Shelf Exam Value")
+                {
+                    ApplicationArea = All;
+                }
+                field("External Mark"; "External Mark")
+                {
+                    ApplicationArea = All;
+                }
+                field(Total; Total)
+                {
+                    ApplicationArea = All;
+                }
+                field("Sitting Date"; "Sitting Date")
+                {
+                    ApplicationArea = All;
+                }
+
+                field(Result; Result)
+                {
+                    ApplicationArea = All;
+                }
+                Field(Grade; Grade)
+                {
+                    ApplicationArea = All;
+                    Visible = False;
+                }
+
+                field(Credit; Credit)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Maximum Mark"; "Maximum Mark")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Percentage Obtained"; "Percentage Obtained")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Global Dimension 1 Code"; "Global Dimension 1 Code")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+                field(Year; Year)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+                field("Credit Earned"; "Credit Earned")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Credit Grade Points Earned"; "Credit Grade Points Earned")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+                field("Total Internal"; "Total Internal")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+
+                field("Score Type"; "Score Type")
+                {
+                    ApplicationArea = all;
+                    Visible = False;
+                }
+
+                field(Level; Level)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Exam Sequence"; "Exam Sequence")
+                {
+                    ApplicationArea = all;
+                }
+                field(Term; Term)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Category-Course Description"; "Category-Course Description")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field(Sequence; Sequence)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Core Clerkship Subject Code"; "Core Clerkship Subject Code")
+                {
+                    ApplicationArea = all;
+
+                }
+                field("Core Clerkship Subject Desc"; "Core Clerkship Subject Desc")
+                {
+                    ApplicationArea = all;
+                }
+                field("School ID"; "School ID")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                Field(TC; TC)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("User ID"; "User ID")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+                field("Start Date"; "Start Date")
+                {
+                    ApplicationArea = All;
+
+                }
+                field("End Date"; "End Date")
+                {
+                    ApplicationArea = All;
+
+                }
+                field(Block; Block)
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+
+                field("Date Certified"; "Date Certified")
+                {
+                    ApplicationArea = All;
+                }
+
+                field("Exam Window"; "Exam Window")
+                {
+                    ApplicationArea = All;
+
+                }
+
+                field("Exam. Location"; "Exam. Location")
+                {
+                    ApplicationArea = All;
+                    Visible = False;
+                }
+                Field("Published Entry No."; "Published Entry No.")
+                {
+                    ApplicationArea = All;
+                    Visible = False;
+                }
+
+            }
+        }
+    }
+}

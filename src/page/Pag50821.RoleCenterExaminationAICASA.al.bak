@@ -1,0 +1,215 @@
+page 50821 "Examination Role Center AICASA"
+{
+    PageType = RoleCenter;
+    UsageCategory = Administration;
+
+    layout
+    {
+        area(RoleCenter)
+        {
+
+            part(Part1; RoleCenterHeadlineExamination)
+            {
+                ApplicationArea = All;
+            }
+            part(Activities; RoleCenterExamAICASACuepage)
+            {
+                ApplicationArea = All;
+            }
+            //SD-SN-04-Dec-2020 +
+            part(Chart1; "Sem. Wise Stud.Chart(Exam)")
+            {
+                Caption = 'Semester wise Student Chart';
+                ApplicationArea = All;
+                Visible = false;
+            }
+            part(chart2; "Course Wise Student Chart")
+            {
+                Caption = 'Course wise Student Chart';
+                ApplicationArea = All;
+                Visible = true;
+            }
+            part(Chart3; "Exam Sub. Wise student")
+            {
+                Caption = 'Exam subject wise student';
+                Visible = true;
+                ApplicationArea = All;
+            }
+            group(StudentList)
+            {
+                Caption = 'Students List';
+                part("Students"; "Student Detail ListPart")
+                {
+                    Caption = 'Student List';
+                    ApplicationArea = All;
+                }
+            }
+            part(ReportInbox; "Report Inbox Part")
+            {
+                ApplicationArea = All;
+                visible = true;
+            }
+            systempart(Control1901377608; MyNotes)
+            {
+                Caption = 'My Notes';
+                ApplicationArea = All;
+            }
+
+        }
+    }
+
+    actions
+    {
+        area(Sections)
+        {
+            group("Examination")
+            {
+                group("External Examinations")
+                {
+                    action("External Exams")
+                    {
+                        RunObject = page "External Student List-CS";
+                        ApplicationArea = All;
+                    }
+                    action("Published External Exams")
+                    {
+                        RunObject = page "External Exam Published List";
+                        ApplicationArea = All;
+                    }
+                }
+                Group("Internal Examination")
+                {
+                    action("Internal Exams")
+                    {
+                        RunObject = page "Internal Student List-CS";
+                        ApplicationArea = All;
+                    }
+                    action("Published Internal Exams")
+                    {
+                        RunObject = page "Internal Exam Published List";
+                        ApplicationArea = All;
+                    }
+                }
+                Group("Grades")
+                {
+                    action("Export Grades")
+                    {
+                        RunObject = xmlport "Export Grades";
+                        ApplicationArea = All;
+                    }
+                    action("Import Grades")
+                    {
+                        RunObject = xmlport "Import Grades";
+                        ApplicationArea = All;
+                    }
+                }
+
+                group(Report)
+                {
+                    action("ICM Marks")
+                    {
+                        RunObject = report 50163;
+                        ApplicationArea = All;
+                    }
+                    action("Student Marks")
+                    {
+                        RunObject = report 50191;
+                        ApplicationArea = All;
+                    }
+                }
+            }
+            group(Academics)
+            {
+                group("Academic Master")
+                {
+
+                    action("Student List")
+                    {
+                        RunObject = Page "Student Details-CS";      //50296
+                        ApplicationArea = All;
+
+                    }
+                    action("Education Calendar List")
+                    {
+                        RunObject = Page "Educ. Time Table List-CS";        //50022
+                        ApplicationArea = All;
+                    }
+                    action("Course Subject List")
+                    {
+                        RunObject = Page "Stud. Course Subject List-CS";        //50174
+                        ApplicationArea = All;
+                    }
+                    action("Course Wise Faculty")
+                    {
+                        RunObject = Page "Faculty-Course Wise-CS";      //50059
+                        ApplicationArea = All;
+                    }
+                    action("Student Subject List")
+                    {
+                        RunObject = Page "Subject Student-CS";      //50001
+                        ApplicationArea = All;
+                    }
+                    action("Student Optional Subject List")
+                    {
+                        RunObject = Page "Opt. Subject of Student-CS";      //50004
+                        ApplicationArea = All;
+                    }
+
+                    action("Subject Master List")
+                    {
+                        RunObject = Page "Subject Detail -CS";      //50298
+                        ApplicationArea = All;
+                    }
+
+                    action("Exam Passing Criteria List")
+                    {
+                        RunObject = Page "50980";
+                        ApplicationArea = All;
+                    }
+
+                    action("Course List")
+                    {
+                        RunObject = Page "50291";
+                        ApplicationArea = All;
+                    }
+                }
+                group("Academics Periodic Activities")
+                {
+                    action("Course Wise Faculty Upload")
+                    {
+                        RunObject = Xmlport "Faculty Course Wise-CS";       //XMLPort 50005
+                        ApplicationArea = All;
+                    }
+                }
+                group("Academics List")
+                {
+                    action("Attendance Student List")
+                    {
+                        RunObject = page "Attendance Student-CS";       //50010
+                        ApplicationArea = All;
+                    }
+                }
+            }
+            group(Evaluation)
+            {
+                group("Grade Master")
+                {
+                    action("Grade List")
+                    {
+                        RunObject = page "Grade List-CS";       //50184
+                        ApplicationArea = All;
+                    }
+                }
+                group("List")
+                {
+                    action("Grade Allocatoin List")
+                    {
+                        RunObject = page "Allocation Grade List-CS";        //50078
+                        ApplicationArea = All;
+                    }
+                }
+            }
+
+        }
+    }
+}

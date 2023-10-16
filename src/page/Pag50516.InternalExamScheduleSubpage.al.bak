@@ -1,0 +1,166 @@
+page 50516 "Internal Exam Schedule Subpage"
+{
+    // version V.001-CS
+
+    AutoSplitKey = true;
+    Caption = 'Internal Exam Schedule Subpage';
+    DelayedInsert = false;
+    PageType = ListPart;
+    UsageCategory = None;
+    SourceTable = "Exam Time Table Line-CS";
+
+    layout
+    {
+        area(content)
+        {
+            repeater(Group)
+            {
+                field("Subject Code"; "Subject Code")
+                {
+                    ApplicationArea = All;
+                    trigger OnValidate()
+                    begin
+                        SubjectMaster.Reset();
+                        SubjectMaster.SetRange(Code, "Subject Code");
+                        SubjectMaster.SetRange(Examination, false);
+                        If SubjectMaster.FindFirst() then begin
+                            Bool_Editable := false;
+                        End ELSE begin
+                            Bool_Editable := true;
+                        end;
+                        CurrPage.Update();
+                    End;
+
+                    trigger OnLookup(var Text: Text): Boolean
+                    begin
+                        ExamTimeTableHeadCS.Get("Document No.");
+                        CourseSubjectLine.Reset();
+                        CourseSubjectLine.SETRANGE("Academic Year", ExamTimeTableHeadCS."Academic Year");
+                        CourseSubjectLine.SetFilter("Level Description", '%1|%2', CourseSubjectLine."Level Description"::"Level 2 Systems", CourseSubjectLine."Level Description"::"Internal Exam Component");
+                        CourseSubjectLine.SETRANGE("Global Dimension 1 Code", ExamTimeTableHeadCS."Global Dimension 1 Code");
+                        IF PAGE.RUNMODAL(0, CourseSubjectLine) = ACTION::LookupOK THEN begin
+                            ExamTimeTableLineCS.Reset();
+                            ExamTimeTableLineCS.SetRange("Document No.", "Document No.");
+                            IF ExamTimeTableLineCS.FindLast() then;
+                            "Line No." := ExamTimeTableLineCS."Line No." + 10000;
+                            "Subject Code" := CourseSubjectLine."Subject Code";
+                            "Subject Name" := CourseSubjectLine.Description;
+                            "Subject Group" := CourseSubjectLine."Subject Group";
+                            "Subject Type" := CourseSubjectLine."Subject Type";
+                            "Subject Class" := CourseSubjectLine."Subject Classification";
+                            "Course Code" := CourseSubjectLine."Course Code";
+                            "Program" := CourseSubjectLine."Program";
+                            "Semester Code" := CourseSubjectLine.Semester;
+                            Year := CourseSubjectLine.Year;
+                            "Examiner Type" := ExamTimeTableHeadCS."Exam Type";
+                            "Academic Year" := ExamTimeTableHeadCS."Academic Year";
+                            "Exam Classification" := ExamTimeTableHeadCS."Exam Classification";
+                            "Global Dimension 1 Code" := ExamTimeTableHeadCS."Global Dimension 1 Code";
+                            Term := ExamTimeTableHeadCS.Term;
+                            LineAutoFill("Line No.");
+                        end;
+                        ValidationCheckCS();
+                        CurrPage.Update();
+                    end;
+                }
+                field("Subject Name"; "Subject Name")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Subject Type"; "Subject Type")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Subject Class"; "Subject Class")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Line No."; "Line No.")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Academic Year"; "Academic Year")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                }
+                field("Course Code"; "Course Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Program"; "Program")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Semester Code"; "Semester Code")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Year; Year)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field(Batch; Batch)
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Exam Date"; "Exam Date")
+                {
+                    ApplicationArea = All;
+                    Editable = Bool_Editable;
+                }
+                field("Exam Slot"; "Exam Slot")
+                {
+                    ApplicationArea = All;
+                    Editable = Bool_Editable;
+                }
+
+                field("Start Time"; "Start Time")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("End Time"; "End Time")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+                field("Exam No."; "Exam No.")
+                {
+                    ApplicationArea = All;
+                    Editable = false;
+                }
+
+            }
+        }
+    }
+    trigger OnAfterGetRecord()
+    begin
+        SubjectMaster.Reset();
+        SubjectMaster.SetRange(Code, "Subject Code");
+        SubjectMaster.SetRange(Examination, false);
+        If SubjectMaster.FindFirst() then begin
+            Bool_Editable := false;
+        End ELSE begin
+            Bool_Editable := true;
+        end;
+    End;
+
+    Var
+        SubjectMaster: Record "Subject Master-CS";
+        ExamTimeTableHeadCS: Record "Exam Time Table Head-CS";
+        CourseSubjectLine: Record "Course Wise Subject Line-CS";
+        ExamTimeTableLineCS: Record "Exam Time Table Line-CS";
+        Bool_Editable: Boolean;
+}
+
+
